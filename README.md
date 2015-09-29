@@ -37,7 +37,7 @@ namp is distributed under GPLv2 license. See LICENSE file. Its dependencies
 are licensed per the following table:
 
 | Library      | License           |
-|----------------------------------|
+| ------------ | ----------------- |
 | libmpg123    | LGPL v2.1         |
 | libao        | GPL v2.0          |
 | libasound    | LGPL              |
