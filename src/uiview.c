@@ -82,7 +82,7 @@ static int trackposition = 0;
 static int spectrum[SPEC_SZ] = { 0 };
 static wchar_t *trackname = NULL;
 static int tracknameposition = 0;
-static wchar_t *credit = L"v" VERSION " by " AUTHOR;
+static wchar_t *notracktitle = L"";
 static wchar_t spectrum_wchars[SPEC_VALS] = L" ▁▂▃▄▅▆▇█";
 static gint64 last_ui_update_us = 0;
 static gint64 last_title_start_us = 0;
@@ -653,7 +653,7 @@ static void uiview_draw_mainwin(void)
     /* Track title */
     if(trackname == NULL)
     {
-      tracktmp = credit;
+      tracktmp = notracktitle;
     }
     else
     {
