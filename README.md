@@ -34,7 +34,7 @@ openSUSE
 --------
 Note: Some packages below are not available in standard repositories, but can be installed from for example packman-essentials.
 
-    zypper install make gcc glib2-devel ncurses-devel libmpg123-devel libao-devel alsa-devel libtag-devel libcurl-devel libopenssl-devel help2man
+    sudo zypper install make gcc glib2-devel ncurses-devel libmpg123-devel libao-devel alsa-devel libtag-devel libcurl-devel libopenssl-devel help2man
 
 Installation
 ============
