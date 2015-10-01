@@ -80,6 +80,11 @@ int main(int argc, char *argv[])
       return 0;
     }
   }
+  else if(argc == 1)
+  {
+    main_disp_help();
+    return 1;
+  }
 
   /* General program init */
   setlocale(LC_CTYPE, "");
@@ -199,6 +204,7 @@ static void main_disp_version(void)
          "conditions. There is NO warranty; not even for\n"
          "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
          "\n"
-         "Written by " AUTHOR ".\n");
+         "Written by " AUTHOR ".\n"
+         );
 }
 
