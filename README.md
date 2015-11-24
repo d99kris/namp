@@ -1,6 +1,6 @@
 namp - ncurses audio media player
 =================================
-namp is a command line MP3 player for Linux. 
+namp is a console MP3 player for Linux. 
 
 ![namp screenshot](/doc/namp-screenshot.png)
 
@@ -56,5 +56,5 @@ namp is distributed under GPLv2 license. See LICENSE file.
 
 Keywords
 ========
-command line interface, mp3 player, linux.
+console, linux, mp3 player, music player, ncurses, terminal.
 

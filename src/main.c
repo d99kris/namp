@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 /* ----------- Local Functions ----------------------------------- */
 static void main_disp_help(void)
 {
-  printf("namp is a minimalistic command-line based audio player.\n"
+  printf("namp is a console MP3 player for Linux.\n"
          "\n"
          "Usage: namp OPTION\n"
          "   or: namp PATH...\n"
