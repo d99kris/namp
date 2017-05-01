@@ -1,0 +1,63 @@
+// uikeyhandler.h
+//
+// Copyright (C) 2017 Kristofer Berggren
+// All rights reserved.
+//
+// namp is distributed under the GPLv2 license, see LICENSE for details.
+//
+
+#pragma once
+
+#include <QObject>
+#include <QTimer>
+
+#include <ncursesw/ncurses.h>
+
+#include "common.h"
+
+class UIKeyhandler : public QObject
+{
+  Q_OBJECT
+
+public:
+  UIKeyhandler(QObject *p_Parent = NULL);
+  ~UIKeyhandler();
+
+public slots:
+  void Poll();
+  void UIStateUpdated(UIState);
+  void ProcessMouseEvent(const UIMouseEvent& p_UIMouseEvent);
+
+signals:
+  void Quit();
+  void Previous();
+  void Play();
+  void Pause();
+  void Stop();
+  void Next();
+  void VolumeUp();
+  void VolumeDown();
+  void SkipBackward();
+  void SkipForward();
+  void ToggleShuffle();
+  void Search();
+  void SelectPrevious();
+  void SelectNext();
+  void PagePrevious();
+  void PageNext();
+  void PlaySelected();
+  void ToggleWindow();
+  void SetVolume(int p_VolumePercentage);
+  void SetPosition(int p_PositionPercentage);
+  void KeyPress(int p_Key);
+  void MouseEventRequest(int p_X, int p_Y, uint32_t p_Button);
+
+private:
+  void DoMouseEventRequest();
+
+private:
+  WINDOW* m_KeyhandlerWindow;
+  QTimer* m_Timer;
+  UIState m_UIState;
+};
+
