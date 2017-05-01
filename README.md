@@ -6,35 +6,40 @@ namp is a console MP3 player for Linux and macOS.
 
 Usage
 =====
-Usage: namp OPTION
-   or: namp PATH...
+Usage:
+
+    namp OPTION
+    namp PATH...
 
 Command-line Options:
-   -h, --help        display this help and exit
-   -v, --version     output version information and exit
-   PATH              file or directory to add to playlist
+
+    -h, --help        display this help and exit
+    -v, --version     output version information and exit
+    PATH              file or directory to add to playlist
 
 Command-line Examples:
-   namp ~/Music      play all files in ~/Music
-   namp hello.mp3    play hello.mp3
+
+    namp ~/Music      play all files in ~/Music
+    namp hello.mp3    play hello.mp3
 
 Interactive Commands:
-   z                 previous track
-   x                 play
-   c                 pause
-   v                 stop
-   b                 next track
-   q,ESC             quit
-   /,j               find
-   up,+              volume up
-   down,-            volume down
-   left              skip/fast backward
-   right             skip/fast forward
-   pgup              playlist previous page
-   pgdn              playlist next page
-   ENTER             play selected track
-   TAB               toggle main window / playlist focus
-   s                 toggle shuffle on/off
+
+    z                 previous track
+    x                 play
+    c                 pause
+    v                 stop
+    b                 next track
+    q,ESC             quit
+    /,j               find
+    up,+              volume up
+    down,-            volume down
+    left              skip/fast backward
+    right             skip/fast forward
+    pgup              playlist previous page
+    pgdn              playlist next page
+    ENTER             play selected track
+    TAB               toggle main window / playlist focus
+    s                 toggle shuffle on/off
 
 Supported Platforms
 ===================
@@ -49,11 +54,12 @@ Dependencies
 Ubuntu
 ------
 
-    sudo apt install libncursesw5-dev qt5-default qt5-qmake qtmultimedia5-dev libqt5multimedia5-plugins libtag1-dev
-    sudo apt install ubuntu-restricted-extras
+    sudo apt install libncursesw5-dev libtag1-dev qt5-default qt5-qmake qtmultimedia5-dev libqt5multimedia5-plugins ubuntu-restricted-extras
 
 macOS
 -----
+
+Qt is recommended to install using the Qt Installers over at [qt.io](https://www.qt.io/download/) and additionally the following are needed:
 
     brew install ncurses taglib
 
@@ -70,7 +76,7 @@ Optionally install:
 Implementation
 ==============
 namp is implemented in C++ / Qt. The original implementation of namp was in C, and that code is available
-in branch [v1](/tree/v1) for those interested.
+in branch [v1](https://github.com/d99kris/namp/tree/v1) for those interested.
 
 License
 =======
