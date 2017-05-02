@@ -37,9 +37,6 @@ AudioPlayer::AudioPlayer(QObject *p_Parent /* = NULL */)
   connect(this, SIGNAL(SetCurrentIndex(int)), &m_MediaPlaylist, SLOT(setCurrentIndex(int)));
 
   // Signals from media playlist
-  connect(&m_MediaPlaylist, SIGNAL(mediaChanged(int, int)), this, SLOT(OnMediaPlaylistChanged()));
-  connect(&m_MediaPlaylist, SIGNAL(mediaInserted(int, int)), this, SLOT(OnMediaPlaylistChanged()));
-  connect(&m_MediaPlaylist, SIGNAL(mediaRemoved(int, int)), this, SLOT(OnMediaPlaylistChanged()));
   connect(&m_MediaPlaylist, SIGNAL(playbackModeChanged(QMediaPlaylist::PlaybackMode)), this, SLOT(OnPlaybackModeChanged(QMediaPlaylist::PlaybackMode)));
   connect(&m_MediaPlaylist, SIGNAL(currentIndexChanged(int)), this, SIGNAL(CurrentIndexChanged(int)));
 }
@@ -71,6 +68,7 @@ void AudioPlayer::SetPlaylist(const QStringList& p_Paths)
       }
     }
   }
+  emit OnMediaPlaylistChanged();
 }
 
 void AudioPlayer::SetPlaybackMode(bool p_Shuffle)

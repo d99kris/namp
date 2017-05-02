@@ -21,9 +21,10 @@ struct TrackInfo
   {
   }
 
-  TrackInfo(const QString& p_Path, const QString& p_Name, int p_Duration, int p_Index)
+  TrackInfo(const QString& p_Path, const QString& p_Name, bool p_Loaded, int p_Duration, int p_Index)
     : path(p_Path)
     , name(p_Name)
+    , loaded(p_Loaded)
     , duration(p_Duration)
     , index(p_Index)
   {
@@ -31,6 +32,7 @@ struct TrackInfo
     
   QString path;
   QString name;
+  bool loaded;
   int duration;
   int index;
 };
@@ -76,6 +78,7 @@ private:
   void DrawPlayer();
   QString GetPlayerTrackName(int p_MaxLength);
   void DrawPlaylist();
+  void LoadTracksData();
 
 private:
   int m_TerminalWidth;
@@ -98,6 +101,7 @@ private:
   QVector<TrackInfo> m_Playlist;
   QVector<TrackInfo> m_Resultlist;
 
+  bool m_PlaylistLoaded;
   int m_TrackPositionSec;
   int m_TrackDurationSec;
   int m_PlaylistPosition;

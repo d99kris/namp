@@ -36,6 +36,7 @@ UIView::UIView(QObject *parent /* = NULL */)
   , m_PlaylistWindowHeight(-1)
   , m_PlaylistWindowX(-1)
   , m_PlaylistWindowY(-1)
+  , m_PlaylistLoaded(true)
   , m_TrackPositionSec(0)
   , m_TrackDurationSec(0)
   , m_PlaylistPosition(0)
@@ -67,26 +68,9 @@ void UIView::PlaylistUpdated(const QVector<QString>& p_Paths)
   int index = 0;
   for (const QString& trackPath : p_Paths)
   {
-    QString trackName;
-
-    TagLib::FileRef fileRef(trackPath.toStdString().c_str());
-    if (!fileRef.isNull() && (fileRef.tag() != NULL))
-    {
-      TagLib::String artist = fileRef.tag()->artist();
-      TagLib::String title = fileRef.tag()->title();
-      if ((artist.length() > 0) && (title.length() > 0))
-      {
-        trackName = QString::fromWCharArray(artist.toWString().c_str()) + " - " + QString::fromWCharArray(title.toWString().c_str());
-      }
-    }
-
-    if (trackName.isEmpty())
-    {
-      trackName = QUrl(trackPath).fileName();
-    }
-
-    m_Playlist.push_back(TrackInfo(trackPath, trackName, 0, index++));
+    m_Playlist.push_back(TrackInfo(trackPath, QUrl(trackPath).fileName(), false, 0, index++));
   }
+  m_PlaylistLoaded = false;
   Refresh();
 }
 
@@ -200,6 +184,7 @@ void UIView::Refresh()
   UpdateScreen();
   DrawPlayer();
   DrawPlaylist();
+  LoadTracksData();
 }
 
 void UIView::UpdateScreen()
@@ -598,6 +583,41 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
       m_PlaylistSelected = qBound(0, m_PlaylistSelected - 1, m_Playlist.count() - 1);
       Refresh();
     }
+  }
+}
+
+void UIView::LoadTracksData()
+{
+  if (m_PlaylistLoaded) return;
+    
+  QTime loadTime;
+  loadTime.start();
+  int i = 0;
+  while ((loadTime.elapsed() < 50) && i < m_Playlist.count())
+  {
+    const int index = (m_PlaylistOffset + i) % m_Playlist.count();
+    if (!m_Playlist[index].loaded)
+    {
+      TagLib::FileRef fileRef(m_Playlist[index].path.toStdString().c_str());
+      if (!fileRef.isNull() && (fileRef.tag() != NULL))
+      {
+        TagLib::String artist = fileRef.tag()->artist();
+        TagLib::String title = fileRef.tag()->title();
+        if ((artist.length() > 0) && (title.length() > 0))
+        {
+          m_Playlist[index].name = QString::fromWCharArray(artist.toWString().c_str()) + " - " + QString::fromWCharArray(title.toWString().c_str());
+        }
+      }
+
+      m_Playlist[index].loaded = true;
+    }
+
+    ++i;
+  }
+
+  if (i == m_Playlist.count())
+  {
+    m_PlaylistLoaded = true;
   }
 }
 
