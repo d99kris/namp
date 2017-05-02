@@ -21,9 +21,14 @@ isEmpty(PREFIX) {
 }
 
 program.path         = $$PREFIX/bin
-program.files        = namp
+macx: {
+  program.files      = namp.app/Contents/MacOS/namp
+}
+unix:!macx {
+  program.files      = namp
+}
 
-manpage.path         = $$PREFIX/man/man1/
+manpage.path         = $$PREFIX/share/man/man1
 manpage.files        = res/namp.1
 
 INSTALLS            += program manpage
@@ -40,6 +45,8 @@ macx: {
                        -L/usr/local/opt/taglib/lib
 
   DEFINES           += _XOPEN_SOURCE_EXTENDED=1
+
+  QT                += widgets
 
   QMAKE_INFO_PLIST   = res/InfoNoDock.plist
   QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.9
