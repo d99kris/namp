@@ -8,6 +8,7 @@
 
 #include <QObject>
 #include <QTime>
+#include <QTimer>
 #include <QUrl>
 #include <QVector>
 
@@ -21,8 +22,8 @@
 
 #include "uiview.h"
 
-UIView::UIView(QObject *parent /* = NULL */)
-  : QObject(parent)
+UIView::UIView(QObject *p_Parent /* = NULL */)
+  : QObject(p_Parent)
   , m_TerminalWidth(-1)
   , m_TerminalHeight(-1)
   , m_PlayerWindow(NULL)
@@ -48,15 +49,27 @@ UIView::UIView(QObject *parent /* = NULL */)
   , m_PreviousUIState(UISTATE_PLAYER)
   , m_SearchString("")
   , m_SearchStringPos(0)
+  , m_Timer(new QTimer(p_Parent))
 {
   setlocale(LC_ALL, "");
   initscr();
   noecho();
-  Refresh();
+
+  QTimer::singleShot(0, this, SLOT(Timer()));
+  connect(m_Timer, SIGNAL(timeout()), this, SLOT(Timer()));
+  m_Timer->setInterval(1000);
+  m_Timer->start();
 }
 
 UIView::~UIView()
 {
+  if (m_Timer != NULL)
+  {
+    m_Timer->stop();
+    delete m_Timer;
+    m_Timer = NULL;
+  }
+
   wclear(stdscr);
   DeleteWindows();
   endwin();
@@ -179,12 +192,17 @@ void UIView::SetUIState(UIState p_UIState)
   emit UIStateUpdated(m_UIState);
 }
 
+void UIView::Timer()
+{
+  LoadTracksData();
+  Refresh();
+}
+
 void UIView::Refresh()
 {
   UpdateScreen();
   DrawPlayer();
   DrawPlaylist();
-  LoadTracksData();
 }
 
 void UIView::UpdateScreen()

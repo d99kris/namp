@@ -9,6 +9,7 @@
 #pragma once
 
 #include <QObject>
+#include <QTimer>
 #include <QVector>
 
 #include <ncursesw/ncurses.h>
@@ -64,6 +65,9 @@ public slots:
   void KeyPress(int p_Key);
   void MouseEventRequest(int p_X, int p_Y, uint32_t p_Button);
 
+private slots:
+  void Timer();
+
 signals:
   void UIStateUpdated(UIState);
   void SetCurrentIndex(int);
@@ -113,5 +117,6 @@ private:
   UIState m_PreviousUIState;
   QString m_SearchString;
   int m_SearchStringPos;
+  QTimer* m_Timer;
 };
 
