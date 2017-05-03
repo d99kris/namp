@@ -1,6 +1,6 @@
 namp - ncurses audio media player
 =================================
-namp is a console MP3 player for Linux and macOS.
+namp is a console-based MP3 player for Linux and macOS.
 
 ![namp screenshot](/res/namp-screenshot.png)
 
@@ -48,35 +48,50 @@ namp is primarily developed and tested on Linux, but basic functionality should 
 - OS X El Capitan 10.11
 - Ubuntu 16.04 LTS
 
-Dependencies
-============
+Linux / Ubuntu
+==============
 
-Ubuntu
-------
+Dependencies
+------------
 
     sudo apt install libncursesw5-dev libtag1-dev qt5-default qt5-qmake qtmultimedia5-dev libqt5multimedia5-plugins ubuntu-restricted-extras
 
-macOS
+Build
 -----
-
-Qt is recommended to install using the Qt Installers over at [qt.io](https://www.qt.io/download/) and additionally the following are needed:
-
-    brew install ncurses taglib
-
-Installation
-============
-Generate Makefile and build:
 
     qmake && make -s
 
-Optionally install:
+Install
+-------
 
     sudo make -s install
 
-Implementation
-==============
+macOS
+=====
+
+Dependencies
+------------
+Install Qt using the installer available at [qt.io](https://www.qt.io/download/) and use brew to install
+the following packages:
+
+    brew install ncurses taglib
+
+Build
+-----
+
+    qmake && make -s
+
+Installation
+------------
+Drag the application built "namp" to Applications. Then optionally add an alias to your ~/.bash_profile
+like this:
+
+    alias namp='/Applications/namp.app/Contents/MacOS/namp'
+
+Technical Details
+=================
 namp is implemented in C++ / Qt. The original implementation of namp was in C, and that code is available
-in branch [v1](https://github.com/d99kris/namp/tree/v1) for those interested.
+in branch [v1](https://github.com/d99kris/namp/tree/v1) for reference.
 
 License
 =======
@@ -84,5 +99,5 @@ namp is distributed under GPLv2 license. See LICENSE file.
 
 Keywords
 ========
-console, linux, macos, mp3 player, music player, ncurses, terminal.
+command line, console, linux, macos, mp3 player, music player, ncurses, terminal.
 
