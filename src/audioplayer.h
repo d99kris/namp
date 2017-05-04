@@ -26,7 +26,6 @@ public:
 signals:
   // Signals to media player
   void Play();
-  void Pause();
   void Stop();
 
   // Signals from media player
@@ -53,6 +52,7 @@ public slots:
   void SkipForward();
   void SetVolume(int);
   void SetPosition(int);
+  void Pause();
 
 private slots:
   void OnMediaPlaylistChanged();

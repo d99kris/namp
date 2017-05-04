@@ -102,7 +102,7 @@ void UIView::DurationChanged(qint64 p_Position)
 void UIView::CurrentIndexChanged(int p_Position)
 {
   m_PlaylistPosition = p_Position;
-  m_PlaylistSelected = p_Position;
+  SetPlaylistSelected(p_Position, true);
   Refresh();
 }
 
@@ -126,33 +126,34 @@ void UIView::Search()
 
 void UIView::SelectPrevious()
 {
-  m_PlaylistSelected = qMax(0, m_PlaylistSelected - 1);
+  SetPlaylistSelected((m_PlaylistSelected - 1), true);
   Refresh();
 }
 
 void UIView::SelectNext()
 {
-  m_PlaylistSelected = qMin(m_PlaylistSelected + 1, m_Playlist.count() - 1);
+  SetPlaylistSelected((m_PlaylistSelected + 1), true);
   Refresh();
 }
 
 void UIView::PagePrevious()
 {
   const int viewMax = m_PlaylistWindowHeight - 2;
-  m_PlaylistSelected = qMax(0, m_PlaylistSelected - viewMax);
+  SetPlaylistSelected((m_PlaylistSelected - viewMax), true);
   Refresh();
 }
 
 void UIView::PageNext()
 {
   const int viewMax = m_PlaylistWindowHeight - 2;
-  m_PlaylistSelected = qMin(m_PlaylistSelected + viewMax, m_Playlist.count() - 1);
+  SetPlaylistSelected((m_PlaylistSelected + viewMax), true);
   Refresh();
 }
 
 void UIView::PlaySelected()
 {
   emit SetCurrentIndex(m_PlaylistSelected);
+  emit Play();
 }
 
 void UIView::ToggleWindow()
@@ -182,11 +183,11 @@ void UIView::SetUIState(UIState p_UIState)
   {
     m_SearchString = "";
     m_SearchStringPos = 0;
-    m_PlaylistSelected = 0;
+    SetPlaylistSelected(0, true);
   }
-  else
+  else if (m_PreviousUIState & UISTATE_SEARCH)
   {
-    m_PlaylistSelected = m_PlaylistPosition;
+    SetPlaylistSelected(m_PlaylistPosition, true);
   }
 
   emit UIStateUpdated(m_UIState);
@@ -383,6 +384,7 @@ void UIView::KeyPress(int p_Key) // can move this to other slots later.
         if (m_PlaylistSelected < m_Resultlist.length())
         {
           emit SetCurrentIndex(m_Resultlist.at(m_PlaylistSelected).index);
+          emit Play();
         }
         SetUIState(m_PreviousUIState);
         break;
@@ -396,11 +398,11 @@ void UIView::KeyPress(int p_Key) // can move this to other slots later.
         break;
 
       case KEY_UP:
-        m_PlaylistSelected = qBound(0, m_PlaylistSelected - 1, m_Resultlist.count() - 1);
+        SetPlaylistSelected(qBound(0, (m_PlaylistSelected - 1), (m_Resultlist.count() - 1)), true);
         break;
 
       case KEY_DOWN:
-        m_PlaylistSelected = qBound(0, m_PlaylistSelected + 1, m_Resultlist.count() - 1);
+        SetPlaylistSelected(qBound(0, (m_PlaylistSelected + 1), (m_Resultlist.count() - 1)), true);
         break;
 
 #ifdef __APPLE__
@@ -443,7 +445,6 @@ void UIView::DrawPlaylist()
         
       // Track list
       const int viewMax = m_PlaylistWindowHeight - 2;
-      m_PlaylistOffset = qBound(0, (m_PlaylistSelected - ((viewMax - 1) / 2)), qMax(0, m_Playlist.count() - viewMax));
       const int viewCount = qBound(0, m_Playlist.count(), viewMax);
       for (int i = 0; i < viewCount; ++i)
       {
@@ -471,7 +472,6 @@ void UIView::DrawPlaylist()
 
       // Track list
       const int viewMax = m_PlaylistWindowHeight - 2;
-      m_PlaylistOffset = qBound(0, (m_PlaylistSelected - ((viewMax - 1) / 2)), qMax(0, m_Resultlist.count() - viewMax));
       const int viewCount = qBound(0, m_Resultlist.count(), viewMax);
       for (int i = 0; i < viewCount; ++i)
       {
@@ -549,7 +549,7 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
     else if ((p_Y > m_PlaylistWindowY) && (p_Y < (m_PlaylistWindowY + m_PlaylistWindowHeight)) &&
              (p_X > (m_PlaylistWindowX + 1)) && (p_X < (m_PlaylistWindowX + m_PlaylistWindowWidth - 1)))
     {
-      m_PlaylistSelected = m_PlaylistOffset + p_Y - m_PlaylistWindowY - 1;
+      SetPlaylistSelected((m_PlaylistOffset + p_Y - m_PlaylistWindowY - 1), false);
       Refresh();
     }
   }
@@ -561,9 +561,10 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
     if ((p_Y > m_PlaylistWindowY) && (p_Y < (m_PlaylistWindowY + m_PlaylistWindowHeight)) &&
         (p_X > (m_PlaylistWindowX + 1)) && (p_X < (m_PlaylistWindowX + m_PlaylistWindowWidth - 1)))
     {
-      m_PlaylistSelected = m_PlaylistOffset + p_Y - m_PlaylistWindowY - 1;
+      SetPlaylistSelected((m_PlaylistOffset + p_Y - m_PlaylistWindowY - 1), false);
       Refresh();
       emit SetCurrentIndex(m_PlaylistSelected);
+      emit Play();
     }
   }
 
@@ -580,7 +581,7 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
     }
     else
     {
-      m_PlaylistSelected = qBound(0, m_PlaylistSelected + 1, m_Playlist.count() - 1);
+      SetPlaylistSelected((qBound(0, m_PlaylistSelected + 1, m_Playlist.count() - 1)), true);
       Refresh();
     }
   }
@@ -598,7 +599,7 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
     }
     else
     {
-      m_PlaylistSelected = qBound(0, m_PlaylistSelected - 1, m_Playlist.count() - 1);
+      SetPlaylistSelected((qBound(0, m_PlaylistSelected - 1, m_Playlist.count() - 1)), true);
       Refresh();
     }
   }
@@ -639,3 +640,19 @@ void UIView::LoadTracksData()
   }
 }
 
+void UIView::SetPlaylistSelected(int p_SelectedTrack, bool p_UpdateOffset)
+{
+  m_PlaylistSelected = qBound(0, p_SelectedTrack, (m_Playlist.count() - 1));
+  if (p_UpdateOffset)
+  {
+    const int viewMax = m_PlaylistWindowHeight - 2;
+    if (m_UIState & (UISTATE_PLAYER | UISTATE_PLAYLIST))
+    {
+      m_PlaylistOffset = qBound(0, (m_PlaylistSelected - ((viewMax - 1) / 2)), qMax(0, m_Playlist.count() - viewMax));
+    }
+    else
+    {
+      m_PlaylistOffset = qBound(0, (m_PlaylistSelected - ((viewMax - 1) / 2)), qMax(0, m_Resultlist.count() - viewMax));
+    }
+  }
+}

@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
   // Signals to audio player
   QObject::connect(&uiKeyhandler, SIGNAL(Previous()), &audioPlayer, SIGNAL(Previous()));
   QObject::connect(&uiKeyhandler, SIGNAL(Play()), &audioPlayer, SIGNAL(Play()));
-  QObject::connect(&uiKeyhandler, SIGNAL(Pause()), &audioPlayer, SIGNAL(Pause()));
+  QObject::connect(&uiKeyhandler, SIGNAL(Pause()), &audioPlayer, SLOT(Pause()));
   QObject::connect(&uiKeyhandler, SIGNAL(Stop()), &audioPlayer, SIGNAL(Stop()));
   QObject::connect(&uiKeyhandler, SIGNAL(Next()), &audioPlayer, SIGNAL(Next()));
   QObject::connect(&uiKeyhandler, SIGNAL(ToggleShuffle()), &audioPlayer, SLOT(ToggleShuffle()));
@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
   QObject::connect(&uiKeyhandler, SIGNAL(SetVolume(int)), &audioPlayer, SLOT(SetVolume(int)));
   QObject::connect(&uiKeyhandler, SIGNAL(SetPosition(int)), &audioPlayer, SLOT(SetPosition(int)));
   QObject::connect(&uiView, SIGNAL(SetCurrentIndex(int)), &audioPlayer, SIGNAL(SetCurrentIndex(int)));
+  QObject::connect(&uiView, SIGNAL(Play()), &audioPlayer, SIGNAL(Play()));
 
   // Signals to ui view
   QObject::connect(&audioPlayer, SIGNAL(PlaylistUpdated(const QVector<QString>&)), &uiView, SLOT(PlaylistUpdated(const QVector<QString>&)));

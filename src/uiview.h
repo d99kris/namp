@@ -72,6 +72,7 @@ signals:
   void UIStateUpdated(UIState);
   void SetCurrentIndex(int);
   void ProcessMouseEvent(const UIMouseEvent& p_UIMouseEvent);
+  void Play();
 
 private:
   void SetUIState(UIState p_UIState);
@@ -83,6 +84,7 @@ private:
   QString GetPlayerTrackName(int p_MaxLength);
   void DrawPlaylist();
   void LoadTracksData();
+  void SetPlaylistSelected(int p_SelectedTrack, bool p_UpdateOffset);
 
 private:
   int m_TerminalWidth;

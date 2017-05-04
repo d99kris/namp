@@ -137,3 +137,21 @@ void AudioPlayer::OnPlaybackModeChanged(QMediaPlaylist::PlaybackMode p_Mode)
   emit PlaybackModeUpdated(p_Mode == QMediaPlaylist::Random);
 }
 
+void AudioPlayer::Pause()
+{
+  switch (m_MediaPlayer.state())
+  {
+    case QMediaPlayer::PlayingState:
+      m_MediaPlayer.pause();
+      break;
+
+    case QMediaPlayer::PausedState:
+      m_MediaPlayer.play();
+      break;
+
+    default:
+    case QMediaPlayer::StoppedState:
+      break;
+  }
+}
+
