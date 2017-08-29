@@ -51,40 +51,40 @@ namp is primarily developed and tested on Linux, but basic functionality should 
 Linux / Ubuntu
 ==============
 
-*Dependencies*
+**Dependencies**
 
     sudo apt install libncursesw5-dev libtag1-dev qt5-default qt5-qmake qtmultimedia5-dev libqt5multimedia5-plugins ubuntu-restricted-extras
 
-*Source*
+**Source**
 
     git clone git clone https://github.com/d99kris/namp && cd namp
 
-*Build*
+**Build**
 
     qmake && make -s
 
-*Install*
+**Install**
 
     sudo make -s install
 
 macOS
 =====
 
-*Dependencies*
+**Dependencies**
 Install Qt using the installer available at [qt.io](https://www.qt.io/download/) and use brew to install
 the following packages:
 
     brew install ncurses taglib
 
-*Source*
+**Source**
 
     git clone git clone https://github.com/d99kris/namp && cd namp
 
-*Build*
+**Build**
 
     qmake && make -s
 
-*Installation*
+**Installation**
 Drag the application built "namp" to Applications. Then optionally add an alias to your ~/.bash_profile
 like this:
 
