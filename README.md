@@ -57,7 +57,7 @@ Linux / Ubuntu
 
 **Source**
 
-    git clone git clone https://github.com/d99kris/namp && cd namp
+    git clone https://github.com/d99kris/namp && cd namp
 
 **Build**
 
@@ -78,7 +78,7 @@ the following packages:
 
 **Source**
 
-    git clone git clone https://github.com/d99kris/namp && cd namp
+    git clone https://github.com/d99kris/namp && cd namp
 
 **Build**
 
