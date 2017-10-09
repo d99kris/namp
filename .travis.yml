@@ -9,11 +9,13 @@ os:
   - osx
 
 install:
-  - echo $TRAVIS_OS_NAME
   - if [ $TRAVIS_OS_NAME = linux ]; then
       sudo apt update;
       sudo apt -y install libncursesw5-dev libtag1-dev qt5-default qt5-qmake
                qtmultimedia5-dev libqt5multimedia5-plugins;
+    fi
+  - if [ $TRAVIS_OS_NAME = osx ]; then
+      brew install ncurses taglib qt5;
     fi
 
 script:
