@@ -5,17 +5,19 @@ sudo:
   - required
 
 os:
-#  - linux
+  - linux
   - osx
+
+rvm:
+  - 2.3.3   # for brew on mac
 
 install:
   - if [ $TRAVIS_OS_NAME = linux ]; then
       sudo apt update;
       sudo apt -y install libncursesw5-dev libtag1-dev qt5-default qt5-qmake
-               qtmultimedia5-dev libqt5multimedia5-plugins;
+                          qtmultimedia5-dev libqt5multimedia5-plugins;
     fi
   - if [ $TRAVIS_OS_NAME = osx ]; then
-      brew update;
       brew install ncurses taglib qt5;
     fi
 
