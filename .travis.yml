@@ -8,12 +8,6 @@ os:
   - linux
   - osx
 
-before-install:
-  - if [ $TRAVIS_OS_NAME = osx ]; then
-      rvm install 2.3.3;
-      rvm --default use 2.3.3;
-    fi
-
 install:
   - if [ $TRAVIS_OS_NAME = linux ]; then
       sudo apt update;
@@ -21,6 +15,8 @@ install:
                           qtmultimedia5-dev libqt5multimedia5-plugins;
     fi
   - if [ $TRAVIS_OS_NAME = osx ]; then
+      rvm install 2.3.3;
+      rvm --default use 2.3.3;
       brew install ncurses taglib qt5;
     fi
 
