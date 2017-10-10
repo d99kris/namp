@@ -1,19 +1,21 @@
 language:
   - cpp
 
-sudo:
-  - required
-
 os:
   - linux
   - osx
 
+addons:
+  apt:
+    packages:
+      - libncursesw5-dev
+      - libtag1-dev
+      - qt5-default
+      - qt5-qmake
+      - qtmultimedia5-dev
+      - libqt5multimedia5-plugins
+
 install:
-  - if [ $TRAVIS_OS_NAME = linux ]; then
-      sudo apt update;
-      sudo apt -y install libncursesw5-dev libtag1-dev qt5-default qt5-qmake
-                          qtmultimedia5-dev libqt5multimedia5-plugins;
-    fi
   - if [ $TRAVIS_OS_NAME = osx ]; then
       brew update;
       brew install ncurses taglib qt5;
@@ -23,4 +25,3 @@ install:
 script:
   - qmake
   - make -s
-
