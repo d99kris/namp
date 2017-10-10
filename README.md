@@ -1,8 +1,6 @@
 namp - ncurses audio media player
 =================================
 
------------------
-
 | **Linux + Mac** |
 |-----------------|
 | [![Build status](https://travis-ci.org/d99kris/namp.svg?branch=master)](https://travis-ci.org/d99kris/namp) |
