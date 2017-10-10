@@ -16,11 +16,7 @@ addons:
       - libqt5multimedia5-plugins
 
 install:
-  - if [ $TRAVIS_OS_NAME = osx ]; then
-      brew update;
-      brew install ncurses taglib qt5;
-      brew link --force qt;
-    fi
+  - if [ $TRAVIS_OS_NAME = osx ]; then brew update && brew bundle; fi
 
 script:
   - qmake
