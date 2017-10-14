@@ -7,8 +7,7 @@ namp - ncurses audio media player
 
 namp is a console-based MP3 player for Linux and macOS.
 
-| ![linux screenshot](/res/namp-linux-screenshot.png) | ![mac screenshot](/res/namp-mac-screenshot.png) | 
-|-----------------------------------------------------|-------------------------------------------------|
+![linux screenshot](/res/namp-linux-screenshot.png) 
 
 Usage
 =====
