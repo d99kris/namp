@@ -6,10 +6,10 @@
 // namp is distributed under the GPLv2 license, see LICENSE for details.
 //
 
+#include <QFileInfo>
 #include <QObject>
 #include <QTime>
 #include <QTimer>
-#include <QUrl>
 #include <QVector>
 
 #include <locale.h>
@@ -81,7 +81,7 @@ void UIView::PlaylistUpdated(const QVector<QString>& p_Paths)
   int index = 0;
   for (const QString& trackPath : p_Paths)
   {
-    m_Playlist.push_back(TrackInfo(trackPath, QUrl(trackPath).fileName(), false, 0, index++));
+    m_Playlist.push_back(TrackInfo(trackPath, QFileInfo(trackPath).completeBaseName(), false, 0, index++));
   }
   m_PlaylistLoaded = false;
   Refresh();
