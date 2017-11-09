@@ -45,6 +45,7 @@ UIView::UIView(QObject *p_Parent /* = NULL */)
   , m_PlaylistOffset(0)
   , m_VolumePercentage(100)
   , m_Shuffle(true)
+  , m_ScrollTitle(false)
   , m_UIState(UISTATE_PLAYER)
   , m_PreviousUIState(UISTATE_PLAYER)
   , m_SearchString("")
@@ -286,7 +287,7 @@ void UIView::DrawPlayer()
     // Track title
     wchar_t trackName[28] = { 0 };
     mvwprintw(m_PlayerWindow, 1, 11, "%-27s", "");
-    swprintf(trackName, 27, L"%s", GetPlayerTrackName(27).toUtf8().constData());
+    swprintf(trackName, 28, L"%s", GetPlayerTrackName(27).toUtf8().constData());
     mvwaddnwstr(m_PlayerWindow, 1, 11, trackName, 27);
 
     // Volume
@@ -320,44 +321,51 @@ QString UIView::GetPlayerTrackName(int p_MaxLength)
     
   if (trackName.size() > p_MaxLength)
   {
-    // Scroll track names that cannot fit
-    static QTime lastUpdateTime;
-    static int lastPlaylistPosition = -1;
-    static int nextUpdateAtElapsed = 0;
-    static int trackScrollOffset = 0;
+    if (m_ScrollTitle)
+    {
+      // Scroll track names that cannot fit
+      static QTime lastUpdateTime;
+      static int lastPlaylistPosition = -1;
+      static int nextUpdateAtElapsed = 0;
+      static int trackScrollOffset = 0;
 
-    if (lastPlaylistPosition != m_PlaylistPosition)
-    {
-      // When track changed, hold title for 4 secs
-      lastUpdateTime.start();
-      trackScrollOffset = 0;
-      nextUpdateAtElapsed = 3900;
-      lastPlaylistPosition = m_PlaylistPosition;
-    }
-    else if (lastUpdateTime.elapsed() > nextUpdateAtElapsed)
-    {
-      // When timer elapsed, increment scroll position
-      lastUpdateTime.start();
-      const int maxScrollOffset = trackName.size() - p_MaxLength;
-      if (trackScrollOffset < maxScrollOffset)
+      if (lastPlaylistPosition != m_PlaylistPosition)
       {
-        // During scroll, view each offset for 1 sec
-        nextUpdateAtElapsed = 900;
-        ++trackScrollOffset;
-      }
-      else if (trackScrollOffset == maxScrollOffset)
-      {
-        // At end of scroll, hold title for 4 secs
-        nextUpdateAtElapsed = 3900;
-        ++trackScrollOffset;
-      }
-      else
-      {
+        // When track changed, hold title for 4 secs
+        lastUpdateTime.start();
         trackScrollOffset = 0;
+        nextUpdateAtElapsed = 3900;
+        lastPlaylistPosition = m_PlaylistPosition;
       }
-    }
+      else if (lastUpdateTime.elapsed() > nextUpdateAtElapsed)
+      {
+        // When timer elapsed, increment scroll position
+        lastUpdateTime.start();
+        const int maxScrollOffset = trackName.size() - p_MaxLength - 1;
+        if (trackScrollOffset < maxScrollOffset)
+        {
+          // During scroll, view each offset for 1 sec
+          nextUpdateAtElapsed = 900;
+          ++trackScrollOffset;
+        }
+        else if (trackScrollOffset == maxScrollOffset)
+        {
+          // At end of scroll, hold title for 4 secs
+          nextUpdateAtElapsed = 3900;
+          ++trackScrollOffset;
+        }
+        else
+        {
+          trackScrollOffset = 0;
+        }
+      }
 
-    trackName = trackName.mid(trackScrollOffset, p_MaxLength);
+      trackName = trackName.mid(trackScrollOffset, p_MaxLength);
+    }
+    else
+    {
+      trackName = trackName.left(p_MaxLength);
+    }
   }
     
   return trackName;
@@ -521,6 +529,9 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
   // Handle click
   if (p_Button & BUTTON1_CLICKED)
   {
+    // Title
+    if ((p_Y == 1) && (p_X >= 11) && (p_X <= 36)) m_ScrollTitle = !m_ScrollTitle;
+
     // Volume
     if ((p_Y == 2) && (p_X >= 11) && (p_X <= 31)) emit ProcessMouseEvent(UIMouseEvent(UIELEM_VOLUME, 100 * (p_X - 11) / 20));
 
@@ -656,3 +667,14 @@ void UIView::SetPlaylistSelected(int p_SelectedTrack, bool p_UpdateOffset)
     }
   }
 }
+
+void UIView::GetScrollTitle(bool& p_ScrollTitle)
+{
+  p_ScrollTitle = m_ScrollTitle;
+}
+
+void UIView::SetScrollTitle(const bool& p_ScrollTitle)
+{
+  m_ScrollTitle = p_ScrollTitle;
+}
+

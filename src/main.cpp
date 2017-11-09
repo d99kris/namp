@@ -106,6 +106,8 @@ int main(int argc, char *argv[])
   emit audioPlayer.SetPlaybackMode(shuffle);
   int volume = settings.value("player/volume", 100).toInt();
   emit audioPlayer.SetVolume(volume);
+  bool scrollTitle = settings.value("ui/scrolltitle", false).toBool();
+  uiView.SetScrollTitle(scrollTitle);
 
   // Start playback and main event loop
   emit audioPlayer.Play();
@@ -116,6 +118,8 @@ int main(int argc, char *argv[])
   settings.setValue("player/shuffle", shuffle);
   audioPlayer.GetVolume(volume);
   settings.setValue("player/volume", volume);
+  uiView.GetScrollTitle(scrollTitle);
+  settings.setValue("ui/scrolltitle", scrollTitle);
 
   // Exit
   return rv;
