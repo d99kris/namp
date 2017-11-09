@@ -108,6 +108,8 @@ int main(int argc, char *argv[])
   emit audioPlayer.SetVolume(volume);
   bool scrollTitle = settings.value("ui/scrolltitle", false).toBool();
   uiView.SetScrollTitle(scrollTitle);
+  bool viewPosition = settings.value("ui/viewposition", true).toBool();
+  uiView.SetViewPosition(viewPosition);
 
   // Start playback and main event loop
   emit audioPlayer.Play();
@@ -120,6 +122,8 @@ int main(int argc, char *argv[])
   settings.setValue("player/volume", volume);
   uiView.GetScrollTitle(scrollTitle);
   settings.setValue("ui/scrolltitle", scrollTitle);
+  uiView.GetViewPosition(viewPosition);
+  settings.setValue("ui/viewposition", viewPosition);
 
   // Exit
   return rv;

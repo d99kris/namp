@@ -49,6 +49,8 @@ public:
   void SetPlaylist(const QVector<QString>& p_Playlist);
   void GetScrollTitle(bool& p_ScrollTitle);
   void SetScrollTitle(const bool& p_ScrollTitle);
+  void GetViewPosition(bool& p_ViewPosition);
+  void SetViewPosition(const bool& p_ViewPosition);
 
 public slots:
   void PlaylistUpdated(const QVector<QString>& p_Paths);
@@ -118,6 +120,7 @@ private:
   int m_VolumePercentage;
   bool m_Shuffle;
   bool m_ScrollTitle;
+  bool m_ViewPosition;
   UIState m_UIState;
   UIState m_PreviousUIState;
   QString m_SearchString;

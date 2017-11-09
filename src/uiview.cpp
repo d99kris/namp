@@ -282,7 +282,14 @@ void UIView::DrawPlayer()
     wattroff(m_PlayerWindow, titleAttributes);
 
     // Track position
-    mvwprintw(m_PlayerWindow, 1, 3, " %02d:%02d", (m_TrackPositionSec / 60), (m_TrackPositionSec % 60));
+    if (m_ViewPosition)
+    {
+      mvwprintw(m_PlayerWindow, 1, 3, " %02d:%02d", (m_TrackPositionSec / 60), (m_TrackPositionSec % 60));
+    }
+    else
+    {
+      mvwprintw(m_PlayerWindow, 1, 3, "      ");
+    }
         
     // Track title
     wchar_t trackName[28] = { 0 };
@@ -529,6 +536,9 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
   // Handle click
   if (p_Button & BUTTON1_CLICKED)
   {
+    // Position
+    if ((p_Y == 1) && (p_X >= 2) && (p_X <= 8)) m_ViewPosition = !m_ViewPosition;
+
     // Title
     if ((p_Y == 1) && (p_X >= 11) && (p_X <= 36)) m_ScrollTitle = !m_ScrollTitle;
 
@@ -676,5 +686,15 @@ void UIView::GetScrollTitle(bool& p_ScrollTitle)
 void UIView::SetScrollTitle(const bool& p_ScrollTitle)
 {
   m_ScrollTitle = p_ScrollTitle;
+}
+
+void UIView::GetViewPosition(bool& p_ViewPosition)
+{
+  p_ViewPosition = m_ViewPosition;
+}
+
+void UIView::SetViewPosition(const bool& p_ViewPosition)
+{
+  m_ViewPosition = p_ViewPosition;
 }
 
