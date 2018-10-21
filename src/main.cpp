@@ -13,6 +13,7 @@
 #endif
 #include <QCoreApplication>
 #include <QSettings>
+#include <QSocketNotifier>
 #include <QTimer>
 
 #include "audioplayer.h"
@@ -95,6 +96,8 @@ int main(int argc, char *argv[])
   QObject::connect(&uiKeyhandler, SIGNAL(MouseEventRequest(int, int, uint32_t)), &uiView, SLOT(MouseEventRequest(int, int, uint32_t)));
 
   // Signals to ui key handler
+  QSocketNotifier socketNotifier(fileno(stdin), QSocketNotifier::Read, &application);
+  QObject::connect(&socketNotifier, SIGNAL(activated(int)), &uiKeyhandler, SLOT(ProcessKeyEvent()));  
   QObject::connect(&uiView, SIGNAL(UIStateUpdated(UIState)), &uiKeyhandler, SLOT(UIStateUpdated(UIState)));
   QObject::connect(&uiView, SIGNAL(ProcessMouseEvent(const UIMouseEvent&)), &uiKeyhandler, SLOT(ProcessMouseEvent(const UIMouseEvent&)));
 

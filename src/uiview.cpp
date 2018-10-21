@@ -229,6 +229,7 @@ void UIView::DeleteWindows()
   if (m_PlayerWindow != NULL)
   {
     wclear(m_PlayerWindow);
+    wrefresh(m_PlayerWindow);
     delwin(m_PlayerWindow);
     m_PlayerWindow = NULL;
   }
@@ -236,6 +237,7 @@ void UIView::DeleteWindows()
   if (m_PlaylistWindow != NULL)
   {
     wclear(m_PlaylistWindow);
+    wrefresh(m_PlaylistWindow);
     delwin(m_PlaylistWindow);
     m_PlaylistWindow = NULL;
   }
@@ -274,7 +276,6 @@ void UIView::DrawPlayer()
   if (m_PlayerWindow != NULL)
   {
     // Border and title
-    wclear(m_PlayerWindow);
     wborder(m_PlayerWindow, 0, 0, 0, 0, 0, 0, 0, 0);
     const int titleAttributes = (m_UIState == UISTATE_PLAYER) ? A_BOLD : A_NORMAL;
     wattron(m_PlayerWindow, titleAttributes);
@@ -447,7 +448,6 @@ void UIView::DrawPlaylist()
   if (m_PlaylistWindow != NULL)
   {
     // Border
-    wclear(m_PlaylistWindow);
     wborder(m_PlaylistWindow, 0, 0, 0, 0, 0, 0, 0, 0);
 
     if (m_UIState & (UISTATE_PLAYER | UISTATE_PLAYLIST))

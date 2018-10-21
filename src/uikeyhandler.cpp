@@ -16,7 +16,6 @@
 UIKeyhandler::UIKeyhandler(QObject *p_Parent /* = NULL */)
   : QObject(p_Parent)
   , m_KeyhandlerWindow(newwin(1, 1, 1, 1))
-  , m_Timer(new QTimer(p_Parent))
   , m_UIState(UISTATE_PLAYER)
 {
   cbreak();
@@ -25,10 +24,6 @@ UIKeyhandler::UIKeyhandler(QObject *p_Parent /* = NULL */)
   keypad(m_KeyhandlerWindow, TRUE);
   mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
   mouseinterval(200);
-
-  connect(m_Timer, SIGNAL(timeout()), this, SLOT(Poll()));
-  m_Timer->setInterval(10);
-  m_Timer->start();
 }
 
 UIKeyhandler::~UIKeyhandler()
@@ -38,16 +33,9 @@ UIKeyhandler::~UIKeyhandler()
     delwin(m_KeyhandlerWindow);
     m_KeyhandlerWindow = NULL;
   }
-
-  if (m_Timer != NULL)
-  {
-    m_Timer->stop();
-    delete m_Timer;
-    m_Timer = NULL;
-  }
 }
 
-void UIKeyhandler::Poll()
+void UIKeyhandler::ProcessKeyEvent()
 {
   int key = wgetch(m_KeyhandlerWindow);
 

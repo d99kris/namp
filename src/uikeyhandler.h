@@ -24,9 +24,9 @@ public:
   ~UIKeyhandler();
 
 public slots:
-  void Poll();
-  void UIStateUpdated(UIState);
+  void ProcessKeyEvent();
   void ProcessMouseEvent(const UIMouseEvent& p_UIMouseEvent);
+  void UIStateUpdated(UIState);
 
 signals:
   void Quit();
@@ -57,7 +57,6 @@ private:
 
 private:
   WINDOW* m_KeyhandlerWindow;
-  QTimer* m_Timer;
   UIState m_UIState;
 };
 
