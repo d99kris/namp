@@ -468,7 +468,7 @@ void UIView::DrawPlaylist()
         wchar_t trackName[viewLength];
         swprintf(trackName, viewLength, L"%s%-36s", m_Playlist.at(playlistIndex).name.toStdString().c_str(), "");
         wattron(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
-        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName, viewLength);
+        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName, viewLength - 1);
         wattroff(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
       }
     }
@@ -495,10 +495,19 @@ void UIView::DrawPlaylist()
         wchar_t trackName[viewLength];
         swprintf(trackName, viewLength, L"%s%-36s", m_Resultlist.at(playlistIndex).name.toStdString().c_str(), "");
         wattron(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
-        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName, viewLength);
+        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName, viewLength - 1);
         wattroff(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
       }
-  
+
+      // Clear remaining track list lines
+      for (int i = viewCount; i < viewMax; ++i)
+      {
+        const int viewLength = m_PlaylistWindowWidth - 3;
+        wchar_t trackName[viewLength];
+        swprintf(trackName, viewLength, L"%s%-36s", "", "");
+        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName, viewLength);
+      }
+      
       // Title
       wattron(m_PlaylistWindow, A_BOLD);
       mvwprintw(m_PlaylistWindow, 0, 2, " search: %-26s ", m_SearchString.toStdString().c_str());
