@@ -381,63 +381,60 @@ QString UIView::GetPlayerTrackName(int p_MaxLength)
 
 void UIView::KeyPress(int p_Key) // can move this to other slots later.
 {
-  if (ispunct(p_Key) || isalnum(p_Key) || (p_Key == ' '))
+  switch (p_Key)
   {
-    if (m_SearchString.length() < 26)
-    {
-      m_SearchString.insert(m_SearchStringPos++, QChar(p_Key));
-    }
-    else
-    {
-      flash();
-    }
-  }
-  else
-  {
-    switch (p_Key)
-    {
-      case '\n':
-        if (m_PlaylistSelected < m_Resultlist.length())
-        {
-          emit SetCurrentIndex(m_Resultlist.at(m_PlaylistSelected).index);
-          emit Play();
-        }
-        SetUIState(m_PreviousUIState);
-        break;
+    case '\n':
+      if (m_PlaylistSelected < m_Resultlist.length())
+      {
+        emit SetCurrentIndex(m_Resultlist.at(m_PlaylistSelected).index);
+        emit Play();
+      }
+      SetUIState(m_PreviousUIState);
+      break;
 
-      case KEY_LEFT:
-        m_SearchStringPos = qBound(0, m_SearchStringPos - 1, m_SearchString.length());
-        break;
+    case KEY_LEFT:
+      m_SearchStringPos = qBound(0, m_SearchStringPos - 1, m_SearchString.length());
+      break;
 
-      case KEY_RIGHT:
-        m_SearchStringPos = qBound(0, m_SearchStringPos + 1, m_SearchString.length());
-        break;
+    case KEY_RIGHT:
+      m_SearchStringPos = qBound(0, m_SearchStringPos + 1, m_SearchString.length());
+      break;
 
-      case KEY_UP:
-        SetPlaylistSelected(qBound(0, (m_PlaylistSelected - 1), (m_Resultlist.count() - 1)), true);
-        break;
+    case KEY_UP:
+      SetPlaylistSelected(qBound(0, (m_PlaylistSelected - 1), (m_Resultlist.count() - 1)), true);
+      break;
 
-      case KEY_DOWN:
-        SetPlaylistSelected(qBound(0, (m_PlaylistSelected + 1), (m_Resultlist.count() - 1)), true);
-        break;
+    case KEY_DOWN:
+      SetPlaylistSelected(qBound(0, (m_PlaylistSelected + 1), (m_Resultlist.count() - 1)), true);
+      break;
 
 #ifdef __APPLE__
-      case 127:
+    case 127:
 #endif
-      case KEY_BACKSPACE:
-        if (m_SearchStringPos > 0)
+    case KEY_BACKSPACE:
+      if (m_SearchStringPos > 0)
+      {
+        m_SearchString.remove(--m_SearchStringPos, 1);
+      }
+      break;
+
+    case 27:
+      SetUIState(m_PreviousUIState);
+      break;
+
+    default:
+      if (ispunct(p_Key) || isalnum(p_Key) || (p_Key == ' '))
+      {
+        if (m_SearchString.length() < 26)
         {
-          m_SearchString.remove(--m_SearchStringPos, 1);
+          m_SearchString.insert(m_SearchStringPos++, QChar(p_Key));
         }
-        break;
-
-      case 27:
-        SetUIState(m_PreviousUIState);
-        break;
-
-      default:
-        break;
-    }
+        else
+        {
+          flash();
+        }
+      }
+      break;
   }
 
   Refresh();
