@@ -76,10 +76,9 @@ macOS
 =====
 
 **Dependencies**
-Install Qt using the installer available at [qt.io](https://www.qt.io/download/) and use brew to install
-the following packages:
 
     brew install ncurses taglib
+    brew install qt5 && brew link --force qt5
 
 **Source**
 
@@ -90,8 +89,10 @@ the following packages:
     qmake && make -s
 
 **Installation**
-Drag the application built "namp" to Applications. Then optionally add an alias to your ~/.bash_profile
-like this:
+
+    cp -r namp.app /Applications/namp.app
+
+Optionally add an alias to your ~/.bash_profile like this:
 
     alias namp='/Applications/namp.app/Contents/MacOS/namp'
 
