@@ -5,9 +5,12 @@ namp - ncurses audio media player
 |-----------------|
 | [![Build status](https://travis-ci.org/d99kris/namp.svg?branch=master)](https://travis-ci.org/d99kris/namp) |
 
-namp is a console-based MP3 player for Linux and macOS.
+namp is a console-based MP3 player for Linux and macOS, implemented in C++ / Qt.
 
 ![linux screenshot](/res/namp-linux-screenshot.png) 
+
+For systems which do not have Qt available, a lite version of namp 
+[namp-lite](https://github.com/d99kris/namp-lite) (Linux only) is available.
 
 Usage
 =====
@@ -95,11 +98,6 @@ macOS
 Optionally add an alias to your ~/.bash_profile like this:
 
     alias namp='/Applications/namp.app/Contents/MacOS/namp'
-
-Technical Details
-=================
-namp is implemented in C++ / Qt. The original implementation of namp was in C, and that code is available
-in branch [v1](https://github.com/d99kris/namp/tree/v1) for reference.
 
 License
 =======
