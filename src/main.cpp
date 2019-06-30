@@ -1,12 +1,15 @@
 // main.cpp
 //
-// Copyright (C) 2017 Kristofer Berggren
+// Copyright (C) 2017-2019 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
 //
 
 #include <iostream>
+
+#include <fcntl.h>
+#include <unistd.h>
 
 #ifdef __APPLE__
 #include <QApplication>
@@ -17,14 +20,22 @@
 #include <QTimer>
 
 #include "audioplayer.h"
+#include "log.h"
 #include "uikeyhandler.h"
 #include "uiview.h"
 
 static void ShowHelp();
 static void ShowVersion();
+static void InitStdErrRedirect(const std::string& p_Path);
+static void CleanupStdErrRedirect();
+
+static int s_OrgStdErr = -1;
+static int s_NewStdErr = -1;
 
 int main(int argc, char *argv[])
 {
+  Log::SetPath("/tmp/namp.log");
+ 
 #ifdef __APPLE__
   // Workaround for OS X not allowing audio playback from QCoreApplication
   QApplication application(argc, argv);
@@ -35,16 +46,29 @@ int main(int argc, char *argv[])
   // Handle arguments
   QStringList arguments = QCoreApplication::arguments();
   arguments.removeAt(0);
-  if ((arguments.size() == 0) || ((arguments.size() > 0) && ((arguments.at(0) == "-h") || (arguments.at(0) == "--help"))))
+  bool setup = false;
+  if (arguments.size() == 0)
   {
     ShowHelp();
     return 1;
+  }
+  else if ((arguments.size() > 0) && ((arguments.at(0) == "-h") || (arguments.at(0) == "--help")))
+  {
+    ShowHelp();
+    return 0;
   }
   else if ((arguments.size() > 0) && ((arguments.at(0) == "-v") || (arguments.at(0) == "--version")))
   {
     ShowVersion();
     return 0;
   }
+  else if ((arguments.size() > 0) && ((arguments.at(0) == "-s") || (arguments.at(0) == "--setup")))
+  {
+    setup = true;
+  }
+
+  // Init environment
+  InitStdErrRedirect("/dev/null");
   
   // Init settings
   QCoreApplication::setApplicationName("namp");
@@ -52,8 +76,40 @@ int main(int argc, char *argv[])
   QCoreApplication::setOrganizationDomain("nope.se");
   QSettings settings;
 
+  Scrobbler* scrobbler = NULL;
+
+  if (setup)
+  {
+    std::cout << "last.fm scrobbler account setup\n";
+    std::cout << "user: ";
+    std::string user;
+    std::getline(std::cin, user);
+    std::cout << "pass: ";
+    std::string pass;
+    pass = Scrobbler::GetPass();
+    if (!pass.empty())
+    {
+      pass = Scrobbler::MD5(pass);
+    }
+
+    scrobbler = new Scrobbler(&application, user, pass);
+    
+    settings.setValue("scrobbler/user", QString::fromStdString(user));
+    settings.setValue("scrobbler/pass", QString::fromStdString(pass));
+
+    return 0;
+  }
+
+  // Init scrobbler
+  std::string user = settings.value("scrobbler/user", "").toString().toStdString();
+  std::string pass = settings.value("scrobbler/pass", "").toString().toStdString();
+  if (!user.empty() && !pass.empty())
+  {
+    scrobbler = new Scrobbler(&application, user, pass);
+  }
+
   // Init ui
-  UIView uiView(&application);
+  UIView uiView(&application, scrobbler);
   UIKeyhandler uiKeyhandler(&application);
 
   // Init player
@@ -128,6 +184,16 @@ int main(int argc, char *argv[])
   uiView.GetViewPosition(viewPosition);
   settings.setValue("ui/viewposition", viewPosition);
 
+  // Cleanup
+  if (scrobbler != NULL)
+  {
+    delete scrobbler;
+    scrobbler = NULL;
+  }
+
+  // Cleanup environment
+  CleanupStdErrRedirect();
+
   // Exit
   return rv;
 }
@@ -142,6 +208,7 @@ static void ShowHelp()
     "\n"
     "Command-line Options:\n"
     "   -h, --help        display this help and exit\n"
+    "   -s, --setup       setup last.fm scrobbling account\n"
     "   -v, --version     output version information and exit\n"
     "   PATH              file or directory to add to playlist\n"
     "\n"
@@ -175,9 +242,9 @@ static void ShowHelp()
 static void ShowVersion()
 {
   std::cout <<
-    "namp v2\n"
+    "namp v2.10\n"
     "\n"
-    "Copyright (C) 2015-2017 Kristofer Berggren\n"
+    "Copyright (C) 2015-2019 Kristofer Berggren\n"
     "This is free software; see the source for copying\n"
     "conditions. There is NO warranty; not even for\n"
     "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
@@ -186,3 +253,23 @@ static void ShowVersion()
     ;
 }
 
+void InitStdErrRedirect(const std::string& p_Path)
+{
+  s_NewStdErr = open(p_Path.c_str(), O_RDWR | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+  if (s_NewStdErr != -1)
+  {
+    s_OrgStdErr = dup(fileno(stderr));
+    dup2(s_NewStdErr, fileno(stderr));
+  }
+}
+
+void CleanupStdErrRedirect()
+{
+  if (s_NewStdErr != -1)
+  {
+    fflush(stderr);
+    close(s_NewStdErr);
+    dup2(s_OrgStdErr, fileno(stderr));
+    close(s_OrgStdErr);
+  }
+}

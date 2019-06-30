@@ -1,6 +1,6 @@
 // uiview.cpp
 //
-// Copyright (C) 2017 Kristofer Berggren
+// Copyright (C) 2017-2019 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -20,10 +20,12 @@
 #include <fileref.h>
 #include <tag.h>
 
+#include "scrobbler.h"
 #include "uiview.h"
 
-UIView::UIView(QObject *p_Parent /* = NULL */)
+UIView::UIView(QObject *p_Parent, Scrobbler* p_Scrobbler)
   : QObject(p_Parent)
+  , m_Scrobbler(p_Scrobbler)
   , m_TerminalWidth(-1)
   , m_TerminalHeight(-1)
   , m_PlayerWindow(NULL)
@@ -51,6 +53,8 @@ UIView::UIView(QObject *p_Parent /* = NULL */)
   , m_SearchString("")
   , m_SearchStringPos(0)
   , m_Timer(new QTimer(p_Parent))
+  , m_SetPlaying(false)
+  , m_SetPlayed(false)
 {
   setlocale(LC_ALL, "");
   initscr();
@@ -92,6 +96,32 @@ void UIView::PositionChanged(qint64 p_Position)
 {
   m_TrackPositionSec = p_Position / 1000;
   Refresh();
+
+  if (m_Scrobbler && (m_TrackDurationSec > 0) && (m_PlaylistPosition < m_Playlist.count()))
+  {
+    if (m_TrackPositionSec == 0)
+    {
+      m_SetPlaying = false;
+      m_SetPlayed = false;
+      m_PlayTime.restart();
+    }
+    
+    const qint64 elapsedSec = m_PlayTime.elapsed() / 1000;
+    if (!m_SetPlayed && (elapsedSec > (m_TrackDurationSec / 2))) // scrobble after 50%
+    {
+      const QString& artist = m_Playlist.at(m_PlaylistPosition).artist;
+      const QString& title = m_Playlist.at(m_PlaylistPosition).title;
+      m_Scrobbler->Played(artist, title, m_TrackDurationSec);
+      m_SetPlayed = true;
+    }
+    else if (!m_SetPlaying && (elapsedSec > 3))
+    {
+      const QString& artist = m_Playlist.at(m_PlaylistPosition).artist;
+      const QString& title = m_Playlist.at(m_PlaylistPosition).title;
+      m_Scrobbler->Playing(artist, title, m_TrackDurationSec);
+      m_SetPlaying = true;
+    }
+  }
 }
 
 void UIView::DurationChanged(qint64 p_Position)
@@ -651,7 +681,9 @@ void UIView::LoadTracksData()
         TagLib::String title = fileRef.tag()->title();
         if ((artist.length() > 0) && (title.length() > 0))
         {
-          m_Playlist[index].name = QString::fromWCharArray(artist.toWString().c_str()) + " - " + QString::fromWCharArray(title.toWString().c_str());
+          m_Playlist[index].artist = QString::fromWCharArray(artist.toWString().c_str());
+          m_Playlist[index].title = QString::fromWCharArray(title.toWString().c_str());
+          m_Playlist[index].name = m_Playlist[index].artist + " - " + m_Playlist[index].title;
         }
       }
 

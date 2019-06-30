@@ -1,6 +1,6 @@
 // uiview.h
 //
-// Copyright (C) 2017 Kristofer Berggren
+// Copyright (C) 2017-2019 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -9,12 +9,14 @@
 #pragma once
 
 #include <QObject>
+#include <QTime>
 #include <QTimer>
 #include <QVector>
 
 #include <ncursesw/ncurses.h>
 
 #include "common.h"
+#include "scrobbler.h"
 
 struct TrackInfo
 {
@@ -32,7 +34,9 @@ struct TrackInfo
   }
     
   QString path;
-  QString name;
+  QString name; // artist - title
+  QString artist;
+  QString title;
   bool loaded;
   int duration;
   int index;
@@ -43,7 +47,7 @@ class UIView : public QObject
   Q_OBJECT
 
 public:
-  UIView(QObject *p_Parent = NULL);
+  UIView(QObject* p_Parent, Scrobbler* p_Scrobbler);
   ~UIView();
 
   void SetPlaylist(const QVector<QString>& p_Playlist);
@@ -91,6 +95,8 @@ private:
   void SetPlaylistSelected(int p_SelectedTrack, bool p_UpdateOffset);
 
 private:
+  Scrobbler* m_Scrobbler;
+  
   int m_TerminalWidth;
   int m_TerminalHeight;
 
@@ -126,5 +132,9 @@ private:
   QString m_SearchString;
   int m_SearchStringPos;
   QTimer* m_Timer;
+  QTime m_PlayTime;
+
+  bool m_SetPlaying;
+  bool m_SetPlayed;
 };
 

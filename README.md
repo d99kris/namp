@@ -22,6 +22,7 @@ Usage:
 Command-line Options:
 
     -h, --help        display this help and exit
+    -s, --setup       setup last.fm scrobbling account
     -v, --version     output version information and exit
     PATH              file or directory to add to playlist
 

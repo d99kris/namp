@@ -1,6 +1,6 @@
 // audioplayer.cpp
 //
-// Copyright (C) 2017 Kristofer Berggren
+// Copyright (C) 2017-2019 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -23,7 +23,6 @@ AudioPlayer::AudioPlayer(QObject *p_Parent /* = NULL */)
 
   // Signals to media player
   connect(this, SIGNAL(Play()), &m_MediaPlayer, SLOT(play()));
-  connect(this, SIGNAL(Pause()), &m_MediaPlayer, SLOT(pause()));
   connect(this, SIGNAL(Stop()), &m_MediaPlayer, SLOT(stop()));
 
   // Signals from media player

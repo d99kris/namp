@@ -1,6 +1,6 @@
 // common.h
 //
-// Copyright (C) 2017 Kristofer Berggren
+// Copyright (C) 2017-2019 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
