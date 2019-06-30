@@ -137,13 +137,11 @@ void Scrobbler::HttpRequest(const std::string& p_Url, const std::string& p_Post 
     const QByteArray postData(p_Post.c_str(), p_Post.length());
     QNetworkRequest req(url);
     req.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/x-www-form-urlencoded"));
-    req.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
     m_NetworkManager->post(req, postData);
   }
   else
   {
     QNetworkRequest req(url);
-    req.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
     m_NetworkManager->get(req);
   }
 }
