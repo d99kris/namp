@@ -21,6 +21,7 @@
 #include <tag.h>
 
 #include "scrobbler.h"
+#include "log.h"
 #include "uiview.h"
 
 UIView::UIView(QObject *p_Parent, Scrobbler* p_Scrobbler)
@@ -681,8 +682,8 @@ void UIView::LoadTracksData()
         TagLib::String title = fileRef.tag()->title();
         if ((artist.length() > 0) && (title.length() > 0))
         {
-          m_Playlist[index].artist = QString::fromWCharArray(artist.toWString().c_str());
-          m_Playlist[index].title = QString::fromWCharArray(title.toWString().c_str());
+          m_Playlist[index].artist = QString::fromStdString(artist.to8Bit());
+          m_Playlist[index].title = QString::fromStdString(title.to8Bit());
           m_Playlist[index].name = m_Playlist[index].artist + " - " + m_Playlist[index].title;
         }
       }
