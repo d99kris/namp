@@ -242,7 +242,7 @@ static void ShowHelp()
 static void ShowVersion()
 {
   std::cout <<
-    "namp v2.11\n"
+    "namp v" VERSION "\n"
     "\n"
     "Copyright (C) 2015-2019 Kristofer Berggren\n"
     "This is free software; see the source for copying\n"

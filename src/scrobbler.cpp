@@ -28,8 +28,8 @@ Scrobbler::Scrobbler(QObject *p_Parent, const std::string& p_User, const std::st
   : QObject(p_Parent)
   , m_User(p_User)
   , m_Pass(p_Pass)
-  , m_App("NAMP")
-  , m_AppVer("1.0")
+  , m_App("namp")
+  , m_AppVer(VERSION)
   , m_NetworkManager(new QNetworkAccessManager(this))
 {
   connect(m_NetworkManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(OnFinished(QNetworkReply*)));
