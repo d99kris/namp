@@ -6,11 +6,13 @@
 // namp is distributed under the GPLv2 license, see LICENSE for details.
 //
 
-#include <QDirIterator>
 #include <QFileInfo>
 #include <QObject>
 #include <QMediaPlayer>
 #include <QMediaPlaylist>
+
+#include <dirent.h>
+#include <string.h>
 
 #include "audioplayer.h"
 
@@ -58,10 +60,11 @@ void AudioPlayer::SetPlaylist(const QStringList& p_Paths)
       }
       else if (fileInfo.isDir())
       {
-        QDirIterator it(fileInfo.absoluteFilePath(), QStringList() << "*.*", QDir::Files, QDirIterator::Subdirectories);
-        while (it.hasNext())
+        std::vector<std::string> files;
+        ListFiles(fileInfo.absoluteFilePath().toStdString(), files);
+        for (auto& file : files)
         {
-          QUrl url = QUrl::fromLocalFile(it.next());
+          QUrl url = QUrl::fromLocalFile(QString::fromStdString(file));
           m_MediaPlaylist.addMedia(url);
         }
       }
@@ -154,3 +157,33 @@ void AudioPlayer::Pause()
   }
 }
 
+void AudioPlayer::ListFiles(const std::string& p_Path, std::vector<std::string>& p_Files)
+{
+  DIR* dir = opendir(p_Path.c_str());
+  if (!dir)
+  {
+    return;
+  }
+
+  struct dirent* entry = NULL;
+  while ((entry = readdir(dir)))
+  {
+    if ((strlen(entry->d_name) == 0) || (entry->d_name[0] == '.'))
+    {
+      continue;
+    }
+
+    if (entry->d_type == DT_DIR)
+    {
+      ListFiles(p_Path + "/" + std::string(entry->d_name), p_Files);
+      continue;
+    }
+
+    if (entry->d_type == DT_REG)
+    {
+      p_Files.push_back(p_Path + "/" + std::string(entry->d_name));
+    }
+  }
+
+  closedir(dir);
+}

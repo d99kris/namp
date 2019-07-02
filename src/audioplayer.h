@@ -12,6 +12,9 @@
 #include <QMediaPlayer>
 #include <QMediaPlaylist>
 
+#include <string>
+#include <vector>
+
 class AudioPlayer : public QObject
 {
   Q_OBJECT
@@ -57,6 +60,9 @@ public slots:
 private slots:
   void OnMediaPlaylistChanged();
   void OnPlaybackModeChanged(QMediaPlaylist::PlaybackMode p_Mode);
+
+private:
+  static void ListFiles(const std::string& p_Path, std::vector<std::string>& p_Files);
 
 private:
   QMediaPlaylist m_MediaPlaylist;
