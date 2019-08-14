@@ -9,7 +9,7 @@ namp is a console-based MP3 player for Linux and macOS, implemented in C++ / Qt.
 For systems which do not have Qt available, a lite version of namp 
 [namp-lite](https://github.com/d99kris/namp-lite) (Linux only) is available.
 
-![linux screenshot](/res/namp-linux-screenshot.png) 
+![screenshot](/res/namp-screenshot.png) 
 
 
 Usage
