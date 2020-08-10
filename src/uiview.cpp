@@ -1,6 +1,6 @@
 // uiview.cpp
 //
-// Copyright (C) 2017-2019 Kristofer Berggren
+// Copyright (C) 2017-2020 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -494,8 +494,10 @@ void UIView::DrawPlaylist()
         const int playlistIndex = i + m_PlaylistOffset;
         const int viewLength = m_PlaylistWindowWidth - 3;
         wchar_t trackName[viewLength];
-        swprintf(trackName, viewLength, L"%s%-36s", m_Playlist.at(playlistIndex).name.toStdString().c_str(), "");
+        swprintf(trackName, viewLength, L"%s", m_Playlist.at(playlistIndex).name.toStdString().c_str());
         wattron(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
+        std::wstring spaces(viewLength - 1, L' ');
+        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, spaces.c_str(), viewLength - 1);
         mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName, viewLength - 1);
         wattroff(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
       }
@@ -521,8 +523,10 @@ void UIView::DrawPlaylist()
         const int playlistIndex = i + m_PlaylistOffset;
         const int viewLength = m_PlaylistWindowWidth - 3;
         wchar_t trackName[viewLength];
-        swprintf(trackName, viewLength, L"%s%-36s", m_Resultlist.at(playlistIndex).name.toStdString().c_str(), "");
+        swprintf(trackName, viewLength, L"%s", m_Resultlist.at(playlistIndex).name.toStdString().c_str());
         wattron(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
+        std::wstring spaces(viewLength - 1, L' ');
+        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, spaces.c_str(), viewLength - 1);
         mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName, viewLength - 1);
         wattroff(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
       }
