@@ -118,9 +118,11 @@ fi
 if [[ "${INSTALL}" == "1" ]]; then
   OS="$(uname)"
   if [ "${OS}" == "Linux" ]; then
-    sudo make install && cd .. || exiterr "install failed (linux), exiting."
+    sudo make install || exiterr "install failed (linux), exiting."
   elif [ "${OS}" == "Darwin" ]; then
-    make install && cd .. || exiterr "install failed (mac), exiting."
+    make install || exiterr "install failed (mac), exiting."
+    rm -rf /Applications/namp.app || exiterr "deleting old namp.app failed (mac), exiting."
+    cp -a namp.app /Applications/namp.app || exiterr "copying namp.app failed (mac), exiting."
   else
     exiterr "install failed (unsupported os ${OS}), exiting."
   fi
