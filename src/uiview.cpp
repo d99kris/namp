@@ -686,8 +686,8 @@ void UIView::LoadTracksData()
         TagLib::String title = fileRef.tag()->title();
         if ((artist.length() > 0) && (title.length() > 0))
         {
-          m_Playlist[index].artist = QString::fromStdString(artist.to8Bit());
-          m_Playlist[index].title = QString::fromStdString(title.to8Bit());
+          m_Playlist[index].artist = QString::fromStdString(artist.to8Bit(true));
+          m_Playlist[index].title = QString::fromStdString(title.to8Bit(true));
           m_Playlist[index].name = m_Playlist[index].artist + " - " + m_Playlist[index].title;
         }
       }

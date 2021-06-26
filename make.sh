@@ -70,6 +70,7 @@ if [[ "${DEPS}" == "1" ]]; then
   if [ "${OS}" == "Linux" ]; then
     DISTRO="$(lsb_release -i | awk -F':\t' '{print $2}')"
     if [[ "${DISTRO}" == "Ubuntu" ]]; then
+      sudo apt -y update && \
       sudo apt -y install libncursesw5-dev libtag1-dev qt5-default qt5-qmake qtmultimedia5-dev libqt5multimedia5-plugins ubuntu-restricted-extras || exiterr "deps failed (linux), exiting."
     else
       exiterr "deps failed (unsupported linux distro ${DISTRO}), exiting."
