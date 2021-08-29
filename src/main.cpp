@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
 static void ShowHelp()
 {
   std::cout <<
-    "namp is a minimalistic console-based audio player.\n"
+    "namp is a minimalistic terminal-based audio player.\n"
     "\n"
     "Usage: namp OPTION\n"
     "   or: namp PATH...\n"
