@@ -1,6 +1,6 @@
 // uikeyhandler.h
 //
-// Copyright (C) 2017-2019 Kristofer Berggren
+// Copyright (C) 2017-2022 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -11,7 +11,7 @@
 #include <QObject>
 #include <QTimer>
 
-#include <ncursesw/ncurses.h>
+#include <ncurses.h>
 
 #include "common.h"
 

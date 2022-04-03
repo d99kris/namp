@@ -3,7 +3,7 @@ TEMPLATE             = app
 CONFIG              += c++11 debug
 QT                  += core multimedia
 
-DEFINES             += VERSION="\\\"2.18\\\""
+DEFINES             += VERSION="\\\"2.19\\\""
 
 HEADERS              = src/audioplayer.h                       \
                        src/common.h                            \
@@ -45,10 +45,14 @@ unix:!macx {
 
 macx: {
   INCLUDEPATH       += /usr/local/opt/ncurses/include          \
-                       /usr/local/opt/taglib/include/taglib
+                       /usr/local/opt/taglib/include/taglib    \
+                       /opt/homebrew/opt/ncurses/include       \
+                       /opt/homebrew/opt/taglib/include/taglib
 
   LIBS              += -L/usr/local/opt/ncurses/lib            \
-                       -L/usr/local/opt/taglib/lib
+                       -L/usr/local/opt/taglib/lib             \
+                       -L/opt/homebrew/opt/ncurses/lib         \
+                       -L/opt/homebrew/opt/taglib/lib
 
   DEFINES           += _XOPEN_SOURCE_EXTENDED=1
 

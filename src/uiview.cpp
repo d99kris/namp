@@ -1,6 +1,6 @@
 // uiview.cpp
 //
-// Copyright (C) 2017-2020 Kristofer Berggren
+// Copyright (C) 2017-2022 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -15,7 +15,7 @@
 #include <locale.h>
 #include <wchar.h>
 
-#include <ncursesw/ncurses.h>
+#include <ncurses.h>
 
 #include <fileref.h>
 #include <tag.h>

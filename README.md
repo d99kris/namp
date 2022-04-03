@@ -81,7 +81,7 @@ macOS
 
 **Dependencies**
 
-    brew install ncurses taglib
+    brew install ncurses taglib gnu-sed
     brew install qt5 && brew link --force qt5
 
 **Source**

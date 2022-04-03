@@ -76,7 +76,7 @@ if [[ "${DEPS}" == "1" ]]; then
       exiterr "deps failed (unsupported linux distro ${DISTRO}), exiting."
     fi
   elif [ "${OS}" == "Darwin" ]; then
-    brew install ncurses taglib qt5 && brew link --force qt5 || exiterr "deps failed (mac), exiting."
+    brew install ncurses taglib gnu-sed qt5 && brew link --force qt5 || exiterr "deps failed (mac), exiting."
   else
     exiterr "deps failed (unsupported os ${OS}), exiting."
   fi
