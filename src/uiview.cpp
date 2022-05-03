@@ -23,6 +23,7 @@
 #include "scrobbler.h"
 #include "log.h"
 #include "uiview.h"
+#include "util.h"
 
 UIView::UIView(QObject *p_Parent, Scrobbler* p_Scrobbler)
   : QObject(p_Parent)
@@ -324,10 +325,11 @@ void UIView::DrawPlayer()
     }
         
     // Track title
-    wchar_t trackName[28] = { 0 };
     mvwprintw(m_PlayerWindow, 1, 11, "%-27s", "");
-    swprintf(trackName, 28, L"%s", GetPlayerTrackName(27).toUtf8().constData());
-    mvwaddnwstr(m_PlayerWindow, 1, 11, trackName, 27);
+    const int viewLength = 27;
+    std::string fullName = GetPlayerTrackName(viewLength).toStdString();
+    std::wstring trackName = Util::TrimPadWString(Util::ToWString(fullName), viewLength);
+    mvwaddnwstr(m_PlayerWindow, 1, 11, trackName.c_str(), trackName.size());
 
     // Volume
     mvwprintw(m_PlayerWindow, 2, 11, "-                   +   PL");
@@ -357,8 +359,9 @@ QString UIView::GetPlayerTrackName(int p_MaxLength)
     snprintf(position, sizeof(position), "(%d:%02d)", (m_TrackDurationSec / 60), (m_TrackDurationSec % 60));
     trackName = m_Playlist.at(m_PlaylistPosition).name + " " + position;
   }
-    
-  if (trackName.size() > p_MaxLength)
+
+  const int trackNameLen = Util::WStringWidth(Util::ToWString(trackName.toStdString()));
+  if (trackNameLen > p_MaxLength)
   {
     if (m_ScrollTitle)
     {
@@ -380,7 +383,7 @@ QString UIView::GetPlayerTrackName(int p_MaxLength)
       {
         // When timer elapsed, increment scroll position
         lastUpdateTime.start();
-        const int maxScrollOffset = trackName.size() - p_MaxLength - 1;
+        const int maxScrollOffset = trackNameLen - p_MaxLength - 1;
         if (trackScrollOffset < maxScrollOffset)
         {
           // During scroll, view each offset for 1 sec
@@ -492,13 +495,13 @@ void UIView::DrawPlaylist()
       for (int i = 0; i < viewCount; ++i)
       {
         const int playlistIndex = i + m_PlaylistOffset;
-        const int viewLength = m_PlaylistWindowWidth - 3;
-        wchar_t trackName[viewLength];
-        swprintf(trackName, viewLength, L"%s", m_Playlist.at(playlistIndex).name.toStdString().c_str());
+        const int viewLength = m_PlaylistWindowWidth - 4;
+        std::string fullName = m_Playlist.at(playlistIndex).name.toStdString();
+        std::wstring trackName = Util::TrimPadWString(Util::ToWString(fullName), viewLength);
         wattron(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
-        std::wstring spaces(viewLength - 1, L' ');
-        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, spaces.c_str(), viewLength - 1);
-        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName, viewLength - 1);
+        std::wstring spaces(viewLength, L' ');
+        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, spaces.c_str(), spaces.size());
+        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName.c_str(), trackName.size());
         wattroff(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
       }
     }
@@ -521,13 +524,13 @@ void UIView::DrawPlaylist()
       for (int i = 0; i < viewCount; ++i)
       {
         const int playlistIndex = i + m_PlaylistOffset;
-        const int viewLength = m_PlaylistWindowWidth - 3;
-        wchar_t trackName[viewLength];
-        swprintf(trackName, viewLength, L"%s", m_Resultlist.at(playlistIndex).name.toStdString().c_str());
+        const int viewLength = m_PlaylistWindowWidth - 4;
+        std::string fullName = m_Resultlist.at(playlistIndex).name.toStdString();
+        std::wstring trackName = Util::TrimPadWString(Util::ToWString(fullName), viewLength);
         wattron(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
-        std::wstring spaces(viewLength - 1, L' ');
-        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, spaces.c_str(), viewLength - 1);
-        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName, viewLength - 1);
+        std::wstring spaces(viewLength, L' ');
+        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, spaces.c_str(), spaces.size());
+        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName.c_str(), trackName.size());
         wattroff(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
       }
 

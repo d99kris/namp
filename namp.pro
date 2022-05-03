@@ -3,21 +3,23 @@ TEMPLATE             = app
 CONFIG              += c++11 debug
 QT                  += core multimedia
 
-DEFINES             += VERSION="\\\"2.19\\\""
+DEFINES             += VERSION="\\\"2.20\\\""
 
 HEADERS              = src/audioplayer.h                       \
                        src/common.h                            \
                        src/log.h                               \
                        src/scrobbler.h                         \
                        src/uikeyhandler.h                      \
-                       src/uiview.h
+                       src/uiview.h                            \
+                       src/util.h
 
 SOURCES              = src/audioplayer.cpp                     \
                        src/main.cpp                            \
                        src/log.cpp                             \
                        src/scrobbler.cpp                       \
                        src/uikeyhandler.cpp                    \
-                       src/uiview.cpp
+                       src/uiview.cpp                          \
+                       src/util.cpp
 
 LIBS                += -lncursesw                              \
                        -ltag
