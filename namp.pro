@@ -3,7 +3,7 @@ TEMPLATE             = app
 CONFIG              += c++11 debug
 QT                  += core multimedia
 
-DEFINES             += VERSION="\\\"2.20\\\""
+DEFINES             += VERSION="\\\"2.21\\\""
 
 HEADERS              = src/audioplayer.h                       \
                        src/common.h                            \
@@ -42,7 +42,8 @@ manpage.files        = res/namp.1
 INSTALLS            += program manpage
 
 unix:!macx {
-  INCLUDEPATH       += /usr/include/taglib
+  INCLUDEPATH       += /usr/include/taglib                     \
+                       /usr/include/ncursesw
 }
 
 macx: {
