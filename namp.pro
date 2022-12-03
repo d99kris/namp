@@ -1,9 +1,9 @@
 TARGET               = namp
 TEMPLATE             = app
-CONFIG              += c++11 debug
+CONFIG              += c++11 debug cmdline
 QT                  += core multimedia
 
-DEFINES             += VERSION="\\\"2.21\\\""
+DEFINES             += VERSION="\\\"2.22\\\""
 
 HEADERS              = src/audioplayer.h                       \
                        src/common.h                            \
@@ -28,18 +28,12 @@ isEmpty(PREFIX) {
  PREFIX = /usr/local
 }
 
-program.path         = $$PREFIX/bin
-macx: {
-  program.files      = namp.app/Contents/MacOS/namp
-}
-unix:!macx {
-  program.files      = namp
-}
+target.path          = $$PREFIX/bin
 
 manpage.path         = $$PREFIX/share/man/man1
 manpage.files        = res/namp.1
 
-INSTALLS            += program manpage
+INSTALLS            += target manpage
 
 unix:!macx {
   INCLUDEPATH       += /usr/include/taglib                     \
@@ -60,8 +54,4 @@ macx: {
   DEFINES           += _XOPEN_SOURCE_EXTENDED=1
 
   QT                += widgets
-
-  QMAKE_INFO_PLIST   = res/InfoNoDock.plist
-  QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.9
 }
-
