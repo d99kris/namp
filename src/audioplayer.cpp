@@ -175,7 +175,8 @@ void AudioPlayer::SetPosition(int p_PositionPercentage)
 
 void AudioPlayer::OnMediaStatusChanged(QMediaPlayer::MediaStatus p_MediaStatus)
 {
-  if (p_MediaStatus == QMediaPlayer::EndOfMedia)
+  if ((p_MediaStatus == QMediaPlayer::EndOfMedia) ||
+      (p_MediaStatus == QMediaPlayer::InvalidMedia))
   {
     Next();
   }
