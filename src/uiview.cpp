@@ -58,6 +58,9 @@ UIView::UIView(QObject *p_Parent, Scrobbler* p_Scrobbler)
   , m_SetPlaying(false)
   , m_SetPlayed(false)
 {
+  std::string title = "namp";
+  printf("\033]0;%s\007", title.c_str());
+
   setlocale(LC_ALL, "");
   initscr();
   noecho();
@@ -80,6 +83,8 @@ UIView::~UIView()
   wclear(stdscr);
   DeleteWindows();
   endwin();
+
+  printf("\033]0;%s\007", "");
 }
 
 void UIView::PlaylistUpdated(const QVector<QString>& p_Paths)
