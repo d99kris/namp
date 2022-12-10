@@ -23,6 +23,7 @@
 
 #include "log.h"
 #include "scrobbler.h"
+#include "version.h"
 
 Scrobbler::Scrobbler(QObject *p_Parent, const std::string& p_User, const std::string& p_Pass)
   : QObject(p_Parent)

@@ -23,6 +23,7 @@
 #include "log.h"
 #include "uikeyhandler.h"
 #include "uiview.h"
+#include "version.h"
 
 static void ShowHelp();
 static void ShowVersion();
