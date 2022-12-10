@@ -3,7 +3,7 @@ TEMPLATE             = app
 CONFIG              += c++11 debug cmdline
 QT                  += core multimedia
 
-DEFINES             += VERSION="\\\"2.22\\\""
+DEFINES             += VERSION="\\\"2.23\\\""
 
 HEADERS              = src/audioplayer.h                       \
                        src/common.h                            \

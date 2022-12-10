@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <QElapsedTimer>
 #include <QObject>
 #include <QTime>
 #include <QTimer>
@@ -132,7 +133,7 @@ private:
   QString m_SearchString;
   int m_SearchStringPos;
   QTimer* m_Timer;
-  QTime m_PlayTime;
+  QElapsedTimer m_PlayTime;
 
   bool m_SetPlaying;
   bool m_SetPlayed;

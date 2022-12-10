@@ -366,7 +366,7 @@ QString UIView::GetPlayerTrackName(int p_MaxLength)
     if (m_ScrollTitle)
     {
       // Scroll track names that cannot fit
-      static QTime lastUpdateTime;
+      static QElapsedTimer lastUpdateTime;
       static int lastPlaylistPosition = -1;
       static int nextUpdateAtElapsed = 0;
       static int trackScrollOffset = 0;
@@ -674,7 +674,7 @@ void UIView::LoadTracksData()
 {
   if (m_PlaylistLoaded) return;
     
-  QTime loadTime;
+  QElapsedTimer loadTime;
   loadTime.start();
   int i = 0;
   while ((loadTime.elapsed() < 50) && i < m_Playlist.count())

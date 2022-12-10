@@ -1,6 +1,6 @@
 // main.cpp
 //
-// Copyright (C) 2017-2021 Kristofer Berggren
+// Copyright (C) 2017-2022 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -69,7 +69,8 @@ int main(int argc, char *argv[])
 
   // Init environment
   InitStdErrRedirect("/dev/null");
-  
+  srand(time(0));
+
   // Init settings
   QCoreApplication::setApplicationName("namp");
   QCoreApplication::setOrganizationName("nope");
@@ -100,6 +101,14 @@ int main(int argc, char *argv[])
     return 0;
   }
 
+  // Init player
+  AudioPlayer audioPlayer(&application);
+  if (!audioPlayer.IsInited())
+  {
+    std::cout << "failed to init audio output\n";
+    return 1;
+  }
+
   // Init scrobbler
   std::string user = settings.value("scrobbler/user", "").toString().toStdString();
   std::string pass = settings.value("scrobbler/pass", "").toString().toStdString();
@@ -112,18 +121,15 @@ int main(int argc, char *argv[])
   UIView uiView(&application, scrobbler);
   UIKeyhandler uiKeyhandler(&application);
 
-  // Init player
-  AudioPlayer audioPlayer(&application);
-
   // Signals to application
   QObject::connect(&uiKeyhandler, SIGNAL(Quit()), &application, SLOT(quit()));
 
   // Signals to audio player
-  QObject::connect(&uiKeyhandler, SIGNAL(Previous()), &audioPlayer, SIGNAL(Previous()));
+  QObject::connect(&uiKeyhandler, SIGNAL(Previous()), &audioPlayer, SLOT(Previous()));
   QObject::connect(&uiKeyhandler, SIGNAL(Play()), &audioPlayer, SIGNAL(Play()));
   QObject::connect(&uiKeyhandler, SIGNAL(Pause()), &audioPlayer, SLOT(Pause()));
   QObject::connect(&uiKeyhandler, SIGNAL(Stop()), &audioPlayer, SIGNAL(Stop()));
-  QObject::connect(&uiKeyhandler, SIGNAL(Next()), &audioPlayer, SIGNAL(Next()));
+  QObject::connect(&uiKeyhandler, SIGNAL(Next()), &audioPlayer, SLOT(Next()));
   QObject::connect(&uiKeyhandler, SIGNAL(ToggleShuffle()), &audioPlayer, SLOT(ToggleShuffle()));
   QObject::connect(&uiKeyhandler, SIGNAL(VolumeUp()), &audioPlayer, SLOT(VolumeUp()));
   QObject::connect(&uiKeyhandler, SIGNAL(VolumeDown()), &audioPlayer, SLOT(VolumeDown()));
@@ -131,7 +137,7 @@ int main(int argc, char *argv[])
   QObject::connect(&uiKeyhandler, SIGNAL(SkipForward()), &audioPlayer, SLOT(SkipForward()));
   QObject::connect(&uiKeyhandler, SIGNAL(SetVolume(int)), &audioPlayer, SLOT(SetVolume(int)));
   QObject::connect(&uiKeyhandler, SIGNAL(SetPosition(int)), &audioPlayer, SLOT(SetPosition(int)));
-  QObject::connect(&uiView, SIGNAL(SetCurrentIndex(int)), &audioPlayer, SIGNAL(SetCurrentIndex(int)));
+  QObject::connect(&uiView, SIGNAL(SetCurrentIndex(int)), &audioPlayer, SLOT(SetCurrentIndex(int)));
   QObject::connect(&uiView, SIGNAL(Play()), &audioPlayer, SIGNAL(Play()));
 
   // Signals to ui view
@@ -157,9 +163,6 @@ int main(int argc, char *argv[])
   QObject::connect(&uiView, SIGNAL(UIStateUpdated(UIState)), &uiKeyhandler, SLOT(UIStateUpdated(UIState)));
   QObject::connect(&uiView, SIGNAL(ProcessMouseEvent(const UIMouseEvent&)), &uiKeyhandler, SLOT(ProcessMouseEvent(const UIMouseEvent&)));
 
-  // Set playlist
-  audioPlayer.SetPlaylist(arguments);
-
   // Apply settings
   bool shuffle = settings.value("player/shuffle", true).toBool();
   emit audioPlayer.SetPlaybackMode(shuffle);
@@ -169,6 +172,9 @@ int main(int argc, char *argv[])
   uiView.SetScrollTitle(scrollTitle);
   bool viewPosition = settings.value("ui/viewposition", true).toBool();
   uiView.SetViewPosition(viewPosition);
+
+  // Set playlist
+  audioPlayer.SetPlaylist(arguments);
 
   // Start playback and main event loop
   emit audioPlayer.Play();

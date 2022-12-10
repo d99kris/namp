@@ -1,6 +1,6 @@
 // audioplayer.h
 //
-// Copyright (C) 2017-2019 Kristofer Berggren
+// Copyright (C) 2017-2022 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -8,9 +8,10 @@
 
 #pragma once
 
+#include <QtGlobal>
+
 #include <QObject>
 #include <QMediaPlayer>
-#include <QMediaPlaylist>
 
 #include <string>
 #include <vector>
@@ -25,6 +26,7 @@ public:
   void SetPlaylist(const QStringList& paths);
   void GetPlaybackMode(bool& p_Shuffle);
   void GetVolume(int& p_Volume);
+  bool IsInited();
 
 signals:
   // Signals to media player
@@ -35,11 +37,6 @@ signals:
   void PositionChanged(qint64 p_Position);
   void DurationChanged(qint64 p_Position);
   void VolumeChanged(int p_Volume);
-
-  // Signals to media playlist
-  void Previous();
-  void Next();
-  void SetCurrentIndex(int);
 
   // Signals from audio player
   void PlaylistUpdated(const QVector<QString>& paths);
@@ -57,15 +54,24 @@ public slots:
   void SetPosition(int);
   void Pause();
 
+  void Previous();
+  void Next();
+  void SetCurrentIndex(int);
+
 private slots:
-  void OnMediaPlaylistChanged();
-  void OnPlaybackModeChanged(QMediaPlaylist::PlaybackMode p_Mode);
+  void OnMediaStatusChanged(QMediaPlayer::MediaStatus p_MediaStatus);
 
 private:
+  void OnMediaChanged(bool p_Forward);
   static void ListFiles(const std::string& p_Path, std::vector<std::string>& p_Files);
 
 private:
-  QMediaPlaylist m_MediaPlaylist;
   QMediaPlayer m_MediaPlayer;
+  QVector<QString> m_PlayListPaths;
+  bool m_Shuffle = false;
+  int m_CurrentIndex = 0;
+  QList<int> m_CurrentIndexHistory;
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+  QScopedPointer<QAudioOutput> m_AudioOutput;
+#endif
 };
-
