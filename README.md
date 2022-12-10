@@ -82,7 +82,7 @@ macOS
 **Dependencies**
 
     brew install ncurses taglib gnu-sed
-    brew install qt5 && brew link --force qt5
+    brew install qt
 
 **Source**
 
@@ -92,13 +92,9 @@ macOS
 
     mkdir -p build && cd build && qmake .. && make -s
 
-**Installation**
+**Install**
 
-    cp -r namp.app /Applications/namp.app
-
-Optionally add an alias to your ~/.bash_profile like this:
-
-    alias namp='/Applications/namp.app/Contents/MacOS/namp'
+    make -s install
 
 License
 =======
