@@ -54,4 +54,6 @@ macx: {
   DEFINES           += _XOPEN_SOURCE_EXTENDED=1
 
   QT                += widgets
+
+  QMAKE_INFO_PLIST   = res/InfoNoDock.plist
 }
