@@ -1,6 +1,6 @@
 // scrobbler.cpp
 //
-// Copyright (C) 2019 Kristofer Berggren
+// Copyright (C) 2019-2023 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -33,7 +33,7 @@ Scrobbler::Scrobbler(QObject *p_Parent, const std::string& p_User, const std::st
   , m_AppVer(VERSION)
   , m_NetworkManager(new QNetworkAccessManager(this))
 {
-  connect(m_NetworkManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(OnFinished(QNetworkReply*)));
+  connect(m_NetworkManager, &QNetworkAccessManager::finished, this, &Scrobbler::OnFinished);
   Connect();
 }
 

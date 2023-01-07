@@ -1,6 +1,6 @@
 // audioplayer.cpp
 //
-// Copyright (C) 2017-2022 Kristofer Berggren
+// Copyright (C) 2017-2023 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -29,15 +29,13 @@ AudioPlayer::AudioPlayer(QObject *p_Parent /* = NULL */)
   , m_MediaPlayer(this)
 {
   // Signals to media player
-  connect(this, SIGNAL(Play()), &m_MediaPlayer, SLOT(play()));
-  connect(this, SIGNAL(Stop()), &m_MediaPlayer, SLOT(stop()));
+  connect(this, &AudioPlayer::Play, &m_MediaPlayer, &QMediaPlayer::play);
+  connect(this, &AudioPlayer::Stop, &m_MediaPlayer, &QMediaPlayer::stop);
 
   // Signals from media player
-  connect(&m_MediaPlayer, SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)),
-          this, SLOT(OnMediaStatusChanged(QMediaPlayer::MediaStatus)));
-  connect(&m_MediaPlayer, SIGNAL(positionChanged(qint64)), this, SIGNAL(PositionChanged(qint64)));
-  connect(&m_MediaPlayer, SIGNAL(durationChanged(qint64)), this, SIGNAL(DurationChanged(qint64)));
-  connect(&m_MediaPlayer, SIGNAL(volumeChanged(int)), this, SIGNAL(VolumeChanged(int)));
+  connect(&m_MediaPlayer, &QMediaPlayer::mediaStatusChanged, this, &AudioPlayer::OnMediaStatusChanged);
+  connect(&m_MediaPlayer, &QMediaPlayer::positionChanged, this, &AudioPlayer::PositionChanged);
+  connect(&m_MediaPlayer, &QMediaPlayer::durationChanged, this, &AudioPlayer::DurationChanged);
 
 #if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
   QAudioDevice audioDevice(QMediaDevices::defaultAudioOutput());
