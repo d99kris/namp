@@ -1,6 +1,6 @@
 // uiview.cpp
 //
-// Copyright (C) 2017-2022 Kristofer Berggren
+// Copyright (C) 2017-2023 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -54,7 +54,7 @@ UIView::UIView(QObject *p_Parent, Scrobbler* p_Scrobbler)
   , m_PreviousUIState(UISTATE_PLAYER)
   , m_SearchString("")
   , m_SearchStringPos(0)
-  , m_Timer(new QTimer(p_Parent))
+  , m_Timer(NULL)
   , m_SetPlaying(false)
   , m_SetPlayed(false)
 {
@@ -65,8 +65,9 @@ UIView::UIView(QObject *p_Parent, Scrobbler* p_Scrobbler)
   initscr();
   noecho();
 
-  QTimer::singleShot(0, this, SLOT(Timer()));
-  connect(m_Timer, SIGNAL(timeout()), this, SLOT(Timer()));
+  QTimer::singleShot(0, this, &UIView::Timer);
+  m_Timer = new QTimer();
+  connect(m_Timer, &QTimer::timeout, this, &UIView::Timer);
   m_Timer->setInterval(1000);
   m_Timer->start();
 }

@@ -1,6 +1,6 @@
 // main.cpp
 //
-// Copyright (C) 2017-2022 Kristofer Berggren
+// Copyright (C) 2017-2023 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -251,7 +251,7 @@ static void ShowVersion()
   std::cout <<
     "namp v" VERSION "\n"
     "\n"
-    "Copyright (C) 2015-2022 Kristofer Berggren\n"
+    "Copyright (C) 2015-2023 Kristofer Berggren\n"
     "This is free software; see the source for copying\n"
     "conditions. There is NO warranty; not even for\n"
     "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
