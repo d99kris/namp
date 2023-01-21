@@ -67,6 +67,7 @@ void AudioPlayer::SetPlaylist(const QStringList& p_Paths)
       {
         std::vector<std::string> files;
         ListFiles(fileInfo.absoluteFilePath().toStdString(), files);
+        std::sort(std::begin(files), std::end(files));
         for (auto& file : files)
         {
           const QString filePath = QString::fromStdString(file);
