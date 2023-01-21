@@ -1,6 +1,6 @@
 // audioplayer.h
 //
-// Copyright (C) 2017-2022 Kristofer Berggren
+// Copyright (C) 2017-2023 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -64,6 +64,7 @@ private slots:
 private:
   void OnMediaChanged(bool p_Forward);
   static void ListFiles(const std::string& p_Path, std::vector<std::string>& p_Files);
+  static bool IsSupportedFileType(const QString& p_Path);
 
 private:
   QMediaPlayer m_MediaPlayer;

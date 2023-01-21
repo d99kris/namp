@@ -58,7 +58,10 @@ void AudioPlayer::SetPlaylist(const QStringList& p_Paths)
     {
       if (fileInfo.isFile())
       {
-        m_PlayListPaths.push_back(fileInfo.absoluteFilePath());
+        const QString filePath = fileInfo.absoluteFilePath();
+        if (!IsSupportedFileType(filePath)) continue;
+
+        m_PlayListPaths.push_back(filePath);
       }
       else if (fileInfo.isDir())
       {
@@ -66,7 +69,10 @@ void AudioPlayer::SetPlaylist(const QStringList& p_Paths)
         ListFiles(fileInfo.absoluteFilePath().toStdString(), files);
         for (auto& file : files)
         {
-          m_PlayListPaths.push_back(QString::fromStdString(file));
+          const QString filePath = QString::fromStdString(file);
+          if (!IsSupportedFileType(filePath)) continue;
+
+          m_PlayListPaths.push_back(filePath);
         }
       }
     }
@@ -311,4 +317,17 @@ void AudioPlayer::ListFiles(const std::string& p_Path, std::vector<std::string>&
   }
 
   closedir(dir);
+}
+
+bool AudioPlayer::IsSupportedFileType(const QString& p_Path)
+{
+  if (p_Path.endsWith(".m3u", Qt::CaseInsensitive) ||
+      p_Path.endsWith(".md", Qt::CaseInsensitive) ||
+      p_Path.endsWith(".txt", Qt::CaseInsensitive) ||
+      p_Path.endsWith(".zip", Qt::CaseInsensitive))
+  {
+    return false;
+  }
+
+  return true;
 }
