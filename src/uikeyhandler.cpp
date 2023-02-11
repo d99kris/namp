@@ -1,6 +1,6 @@
 // uikeyhandler.cpp
 //
-// Copyright (C) 2017-2022 Kristofer Berggren
+// Copyright (C) 2017-2023 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -108,6 +108,14 @@ void UIKeyhandler::ProcessKeyEvent()
 
     case KEY_NPAGE:
       if (m_UIState & UISTATE_PLAYLIST) emit PageNext();
+      break;
+
+    case KEY_HOME:
+      if (m_UIState & UISTATE_PLAYLIST) emit Home();
+      break;
+
+    case KEY_END:
+      if (m_UIState & UISTATE_PLAYLIST) emit End();
       break;
 
     case '\n':

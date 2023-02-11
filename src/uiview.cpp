@@ -189,6 +189,18 @@ void UIView::PageNext()
   Refresh();
 }
 
+void UIView::Home()
+{
+  SetPlaylistSelected(0, true);
+  Refresh();
+}
+
+void UIView::End()
+{
+  SetPlaylistSelected((m_Playlist.count() - 1), true);
+  Refresh();
+}
+
 void UIView::PlaySelected()
 {
   emit SetCurrentIndex(m_PlaylistSelected);

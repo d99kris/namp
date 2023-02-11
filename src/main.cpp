@@ -153,6 +153,8 @@ int main(int argc, char *argv[])
   QObject::connect(&uiKeyhandler, SIGNAL(SelectNext()), &uiView, SLOT(SelectNext()));
   QObject::connect(&uiKeyhandler, SIGNAL(PagePrevious()), &uiView, SLOT(PagePrevious()));
   QObject::connect(&uiKeyhandler, SIGNAL(PageNext()), &uiView, SLOT(PageNext()));
+  QObject::connect(&uiKeyhandler, SIGNAL(Home()), &uiView, SLOT(Home()));
+  QObject::connect(&uiKeyhandler, SIGNAL(End()), &uiView, SLOT(End()));
   QObject::connect(&uiKeyhandler, SIGNAL(PlaySelected()), &uiView, SLOT(PlaySelected()));
   QObject::connect(&uiKeyhandler, SIGNAL(ToggleWindow()), &uiView, SLOT(ToggleWindow()));
   QObject::connect(&uiKeyhandler, SIGNAL(KeyPress(int)), &uiView, SLOT(KeyPress(int)));

@@ -1,6 +1,6 @@
 // uiview.h
 //
-// Copyright (C) 2017-2022 Kristofer Berggren
+// Copyright (C) 2017-2023 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -69,6 +69,8 @@ public slots:
   void SelectNext();
   void PagePrevious();
   void PageNext();
+  void Home();
+  void End();
   void PlaySelected();
   void ToggleWindow();
   void KeyPress(int p_Key);
