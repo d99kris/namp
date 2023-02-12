@@ -44,6 +44,8 @@ Interactive Commands:
     down,-            volume down
     left              skip/fast backward
     right             skip/fast forward
+    home              playlist top
+    end               playlist end
     pgup              playlist previous page
     pgdn              playlist next page
     ENTER             play selected track

@@ -237,6 +237,8 @@ static void ShowHelp()
     "   down,-            volume down\n"
     "   left              skip/fast backward\n"
     "   right             skip/fast forward\n"
+    "   home              playlist top\n"
+    "   end               playlist end\n"
     "   pgup              playlist previous page\n"
     "   pgdn              playlist next page\n"
     "   ENTER             play selected track\n"
