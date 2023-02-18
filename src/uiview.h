@@ -106,16 +106,20 @@ private:
   WINDOW* m_PlayerWindow;
   WINDOW* m_PlaylistWindow;
 
-  const int m_PlayerWindowWidth;
+  int m_PlayerWindowWidth;
   const int m_PlayerWindowHeight;
   const int m_PlayerWindowX;
   const int m_PlayerWindowY;
 
-  const int m_PlaylistWindowWidth;
+  int m_PlaylistWindowWidth;
   const int m_PlaylistWindowMinHeight;
   int m_PlaylistWindowHeight;
   int m_PlaylistWindowX;
   int m_PlaylistWindowY;
+
+  int m_TitleWidth = 0;
+  int m_VolumeWidth = 0;
+  int m_PositionWidth = 0;
 
   QVector<TrackInfo> m_Playlist;
   QVector<TrackInfo> m_Resultlist;

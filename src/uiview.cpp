@@ -25,6 +25,10 @@
 #include "uiview.h"
 #include "util.h"
 
+static int s_MinTerminalWidth = 40;
+static int s_MinTerminalHeight = 6;
+static int s_SearchWidthPad = 4;
+
 UIView::UIView(QObject *p_Parent, Scrobbler* p_Scrobbler)
   : QObject(p_Parent)
   , m_Scrobbler(p_Scrobbler)
@@ -32,11 +36,11 @@ UIView::UIView(QObject *p_Parent, Scrobbler* p_Scrobbler)
   , m_TerminalHeight(-1)
   , m_PlayerWindow(NULL)
   , m_PlaylistWindow(NULL)
-  , m_PlayerWindowWidth(40)
-  , m_PlayerWindowHeight(6)
+  , m_PlayerWindowWidth(s_MinTerminalWidth)
+  , m_PlayerWindowHeight(s_MinTerminalHeight)
   , m_PlayerWindowX(0)
   , m_PlayerWindowY(0)
-  , m_PlaylistWindowWidth(40)
+  , m_PlaylistWindowWidth(s_MinTerminalWidth)
   , m_PlaylistWindowMinHeight(6)
   , m_PlaylistWindowHeight(-1)
   , m_PlaylistWindowX(-1)
@@ -295,20 +299,29 @@ void UIView::DeleteWindows()
 
 void UIView::CreateWindows()
 {
-  // Player window has constant size and position
-  m_PlayerWindow = newwin(m_PlayerWindowHeight, m_PlayerWindowWidth, m_PlayerWindowY, m_PlayerWindowX);
-
-  if ((m_PlayerWindowHeight + m_PlaylistWindowMinHeight) <= m_TerminalHeight)
+  if (m_TerminalHeight >= (s_MinTerminalHeight * 2))
   {
     // Playlist can fit under player window (first option)
+
+    int idealWindowWidth = std::max(s_MinTerminalWidth, m_TerminalWidth);
+    m_PlayerWindowWidth = idealWindowWidth;
+    m_PlaylistWindowWidth = idealWindowWidth;
+    m_PlayerWindow = newwin(m_PlayerWindowHeight, m_PlayerWindowWidth, m_PlayerWindowY, m_PlayerWindowX);
+
     m_PlaylistWindowHeight = m_TerminalHeight - m_PlayerWindowHeight;
     m_PlaylistWindowX = 0;
     m_PlaylistWindowY = m_PlayerWindowHeight;
     m_PlaylistWindow = newwin(m_PlaylistWindowHeight, m_PlaylistWindowWidth, m_PlaylistWindowY, m_PlaylistWindowX);
   }
-  else if ((m_PlayerWindowWidth + m_PlaylistWindowWidth) <= m_TerminalWidth)
+  else if (m_TerminalWidth >= 80)
   {
     // Playlist can fit on the right side of player window (second option)
+
+    int idealWindowWidth = std::max(s_MinTerminalWidth, m_TerminalWidth / 2);
+    m_PlayerWindowWidth = idealWindowWidth;
+    m_PlaylistWindowWidth = idealWindowWidth + (m_TerminalWidth % 2);
+    m_PlayerWindow = newwin(m_PlayerWindowHeight, m_PlayerWindowWidth, m_PlayerWindowY, m_PlayerWindowX);
+
     m_PlaylistWindowHeight = m_PlayerWindowHeight;
     m_PlaylistWindowX = m_PlayerWindowWidth;
     m_PlaylistWindowY = 0;
@@ -317,8 +330,17 @@ void UIView::CreateWindows()
   else
   {
     // Disable playlist if it cannot fit (last option)
+
+    int idealWindowWidth = std::max(s_MinTerminalWidth, m_TerminalWidth);
+    m_PlayerWindowWidth = idealWindowWidth;
+    m_PlayerWindow = newwin(m_PlayerWindowHeight, m_PlayerWindowWidth, m_PlayerWindowY, m_PlayerWindowX);
+
     m_PlaylistWindow = NULL;
   }
+
+  m_TitleWidth = m_PlayerWindowWidth - 13;;
+  m_VolumeWidth = m_PlayerWindowWidth - 15;
+  m_PositionWidth = m_PlayerWindowWidth - 6;
 }
 
 void UIView::DrawPlayer()
@@ -329,7 +351,8 @@ void UIView::DrawPlayer()
     wborder(m_PlayerWindow, 0, 0, 0, 0, 0, 0, 0, 0);
     const int titleAttributes = (m_UIState == UISTATE_PLAYER) ? A_BOLD : A_NORMAL;
     wattron(m_PlayerWindow, titleAttributes);
-    mvwprintw(m_PlayerWindow, 0, 17, " namp ");
+    const int titlePos = (m_PlayerWindowWidth - 6) / 2;
+    mvwprintw(m_PlayerWindow, 0, titlePos, " namp ");
     wattroff(m_PlayerWindow, titleAttributes);
 
     // Track position
@@ -343,21 +366,20 @@ void UIView::DrawPlayer()
     }
         
     // Track title
-    mvwprintw(m_PlayerWindow, 1, 11, "%-27s", "");
-    const int viewLength = 27;
-    std::string fullName = GetPlayerTrackName(viewLength).toStdString();
-    std::wstring trackName = Util::TrimPadWString(Util::ToWString(fullName), viewLength);
+    mvwprintw(m_PlayerWindow, 1, 11, "%.*s", -m_TitleWidth, "");
+    std::string fullName = GetPlayerTrackName(m_TitleWidth).toStdString();
+    std::wstring trackName = Util::TrimPadWString(Util::ToWString(fullName), m_TitleWidth);
     mvwaddnwstr(m_PlayerWindow, 1, 11, trackName.c_str(), trackName.size());
 
     // Volume
-    mvwprintw(m_PlayerWindow, 2, 11, "-                   +   PL");
-    mvwhline(m_PlayerWindow, 2, 12, 0, (19 * m_VolumePercentage) / 100);
+    mvwprintw(m_PlayerWindow, 2, 11, "-%*c+", m_VolumeWidth, ' ');
+    mvwhline(m_PlayerWindow, 2, 12, 0, (m_VolumeWidth * m_VolumePercentage) / 100);
 
     // Progress
-    mvwprintw(m_PlayerWindow, 3, 2, "|                                  |");
+    mvwprintw(m_PlayerWindow, 3, 2, "|%*c|", m_PositionWidth, ' ');
     if(m_TrackDurationSec != 0)
     {
-      mvwhline(m_PlayerWindow, 3, 3, 0, (34 * m_TrackPositionSec) / m_TrackDurationSec);
+      mvwhline(m_PlayerWindow, 3, 3, 0, (m_PositionWidth * m_TrackPositionSec) / m_TrackDurationSec);
     }
 
     // Playback controls
@@ -477,7 +499,7 @@ void UIView::KeyPress(int p_Key) // can move this to other slots later.
     default:
       if (ispunct(p_Key) || isalnum(p_Key) || (p_Key == ' '))
       {
-        if (m_SearchString.length() < 26)
+        if (m_SearchString.length() < (m_PlaylistWindowWidth - s_SearchWidthPad))
         {
           m_SearchString.insert(m_SearchStringPos++, QChar(p_Key));
         }
@@ -504,9 +526,10 @@ void UIView::DrawPlaylist()
       // Title
       const int titleAttributes = (m_UIState & (UISTATE_PLAYLIST | UISTATE_SEARCH)) ? A_BOLD : A_NORMAL;
       wattron(m_PlaylistWindow, titleAttributes);
-      mvwprintw(m_PlaylistWindow, 0, 15, " playlist ");
+      const int titlePos = (m_PlaylistWindowWidth - 10) / 2;
+      mvwprintw(m_PlaylistWindow, 0, titlePos, " playlist ");
       wattroff(m_PlaylistWindow, titleAttributes);
-        
+
       // Track list
       const int viewMax = m_PlaylistWindowHeight - 2;
       const int viewCount = qBound(0, m_Playlist.count(), viewMax);
@@ -556,16 +579,21 @@ void UIView::DrawPlaylist()
       for (int i = viewCount; i < viewMax; ++i)
       {
         const int viewLength = m_PlaylistWindowWidth - 3;
-        wchar_t trackName[viewLength];
-        swprintf(trackName, viewLength, L"%s%-36s", "", "");
+        wchar_t trackName[viewLength + 1];
+        swprintf(trackName, viewLength, L"%.-*s", viewLength, "");
         mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName, viewLength);
       }
       
       // Title
       wattron(m_PlaylistWindow, A_BOLD);
-      mvwprintw(m_PlaylistWindow, 0, 2, " search: %-26s ", m_SearchString.toStdString().c_str());
+      const int searchStrLength = m_PlaylistWindowWidth - s_SearchWidthPad;
+      const int viewLength = m_PlaylistWindowWidth - s_SearchWidthPad;
+      std::wstring trackName = Util::TrimPadWString(Util::ToWString(" search: " + m_SearchString.toStdString()), viewLength);
+      std::wstring spaces(viewLength, L' ');
+      mvwaddnwstr(m_PlaylistWindow, 0, 2, spaces.c_str(), spaces.size());
+      mvwaddnwstr(m_PlaylistWindow, 0, 2, trackName.c_str(), trackName.size());
       wattroff(m_PlaylistWindow, A_BOLD);
-      wmove(m_PlaylistWindow, 0, 11 + m_SearchStringPos);
+      wmove(m_PlaylistWindow, 0, searchStrLength - s_SearchWidthPad - 1 + m_SearchStringPos);
     }
 
     // Refresh
@@ -602,13 +630,13 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
     if ((p_Y == 1) && (p_X >= 2) && (p_X <= 8)) m_ViewPosition = !m_ViewPosition;
 
     // Title
-    if ((p_Y == 1) && (p_X >= 11) && (p_X <= 36)) m_ScrollTitle = !m_ScrollTitle;
+    if ((p_Y == 1) && (p_X >= 11) && (p_X < (m_TitleWidth + 11))) m_ScrollTitle = !m_ScrollTitle;
 
     // Volume
-    if ((p_Y == 2) && (p_X >= 11) && (p_X <= 31)) emit ProcessMouseEvent(UIMouseEvent(UIELEM_VOLUME, 100 * (p_X - 11) / 20));
+    if ((p_Y == 2) && (p_X >= 11) && (p_X < (m_VolumeWidth + 11 + 2))) emit ProcessMouseEvent(UIMouseEvent(UIELEM_VOLUME, 100 * (p_X - 11) / m_VolumeWidth));
 
     // Position
-    else if ((p_Y == 3) && (p_X >= 2) && (p_X <= 37)) emit ProcessMouseEvent(UIMouseEvent(UIELEM_POSITION, 100 * (p_X - 2) / 35));
+    else if ((p_Y == 3) && (p_X >= 2) && (p_X < (m_PositionWidth + 2 + 2))) emit ProcessMouseEvent(UIMouseEvent(UIELEM_POSITION, 100 * (p_X - 2) / m_PositionWidth));
 
     // Previous
     else if ((p_Y == 4) && (p_X >= 2) && (p_X <= 3)) emit ProcessMouseEvent(UIMouseEvent(UIELEM_PREVIOUS, 0));
