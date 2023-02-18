@@ -482,6 +482,28 @@ void UIView::KeyPress(int p_Key) // can move this to other slots later.
       SetPlaylistSelected(qBound(0, (m_PlaylistSelected + 1), (m_Resultlist.count() - 1)), true);
       break;
 
+    case KEY_PPAGE:
+      {
+        const int viewMax = m_PlaylistWindowHeight - 2;
+        SetPlaylistSelected(qBound(0, (m_PlaylistSelected - viewMax), (m_Resultlist.count() - 1)), true);
+      }
+      break;
+
+    case KEY_NPAGE:
+      {
+        const int viewMax = m_PlaylistWindowHeight - 2;
+        SetPlaylistSelected(qBound(0, (m_PlaylistSelected + viewMax), (m_Resultlist.count() - 1)), true);
+      }
+      break;
+
+    case KEY_HOME:
+      SetPlaylistSelected(0, true);
+      break;
+
+    case KEY_END:
+      SetPlaylistSelected((m_Resultlist.count() - 1), true);
+      break;
+
 #ifdef __APPLE__
     case 127:
 #endif
