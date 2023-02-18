@@ -119,14 +119,14 @@ void UIView::PositionChanged(qint64 p_Position)
     }
     
     const qint64 elapsedSec = m_PlayTime.elapsed() / 1000;
-    if (!m_SetPlayed && (elapsedSec > (m_TrackDurationSec / 2))) // scrobble after 50%
+    if (!m_SetPlayed && (elapsedSec >= 10) && (m_TrackPositionSec >= (m_TrackDurationSec / 2))) // scrobble played after 50% (min 10 sec)
     {
       const QString& artist = m_Playlist.at(m_PlaylistPosition).artist;
       const QString& title = m_Playlist.at(m_PlaylistPosition).title;
       m_Scrobbler->Played(artist, title, m_TrackDurationSec);
       m_SetPlayed = true;
     }
-    else if (!m_SetPlaying && (elapsedSec > 3))
+    else if (!m_SetPlaying && (elapsedSec >= 3)) // scrobble playing after 3 sec
     {
       const QString& artist = m_Playlist.at(m_PlaylistPosition).artist;
       const QString& title = m_Playlist.at(m_PlaylistPosition).title;
@@ -383,7 +383,16 @@ void UIView::DrawPlayer()
     }
 
     // Playback controls
-    mvwprintw(m_PlayerWindow, 4, 2, "|< |> || [] >|  [%c] Shuffle", m_Shuffle ? 'X' : ' ');
+    char state = ' ';
+    if (m_SetPlayed)
+    {
+      state = '^';
+    }
+    else if (m_SetPlaying)
+    {
+      state = '_';
+    }
+    mvwprintw(m_PlayerWindow, 4, 2, "|< |> || [] >|  [%c] Shuffle  %c", m_Shuffle ? 'X' : ' ', state);
 
     // Refresh
     wrefresh(m_PlayerWindow);

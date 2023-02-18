@@ -8,4 +8,4 @@
 
 #pragma once
 
-#define VERSION "2.33"
+#define VERSION "2.34"
