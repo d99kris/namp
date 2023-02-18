@@ -610,9 +610,8 @@ void UIView::DrawPlaylist()
       for (int i = viewCount; i < viewMax; ++i)
       {
         const int viewLength = m_PlaylistWindowWidth - 3;
-        wchar_t trackName[viewLength + 1];
-        swprintf(trackName, viewLength, L"%.-*s", viewLength, "");
-        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName, viewLength);
+        std::wstring trackName = Util::TrimPadWString(L"", viewLength);
+        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName.c_str(), viewLength);
       }
       
       // Title
