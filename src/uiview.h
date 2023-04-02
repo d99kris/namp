@@ -98,24 +98,24 @@ private:
   void SetPlaylistSelected(int p_SelectedTrack, bool p_UpdateOffset);
 
 private:
-  Scrobbler* m_Scrobbler;
+  Scrobbler* m_Scrobbler = nullptr;
   
-  int m_TerminalWidth;
-  int m_TerminalHeight;
+  int m_TerminalWidth = -1;
+  int m_TerminalHeight = -1;
 
-  WINDOW* m_PlayerWindow;
-  WINDOW* m_PlaylistWindow;
+  WINDOW* m_PlayerWindow = nullptr;
+  WINDOW* m_PlaylistWindow = nullptr;
 
-  int m_PlayerWindowWidth;
-  const int m_PlayerWindowHeight;
-  const int m_PlayerWindowX;
-  const int m_PlayerWindowY;
+  int m_PlayerWindowWidth = 0;
+  const int m_PlayerWindowHeight = 0;
+  const int m_PlayerWindowX = 0;
+  const int m_PlayerWindowY = 0;
 
-  int m_PlaylistWindowWidth;
-  const int m_PlaylistWindowMinHeight;
-  int m_PlaylistWindowHeight;
-  int m_PlaylistWindowX;
-  int m_PlaylistWindowY;
+  int m_PlaylistWindowWidth = 0;
+  const int m_PlaylistWindowMinHeight = 0;
+  int m_PlaylistWindowHeight = -1;
+  int m_PlaylistWindowX = -1;
+  int m_PlaylistWindowY = -1;
 
   int m_TitleWidth = 0;
   int m_VolumeWidth = 0;
@@ -124,24 +124,24 @@ private:
   QVector<TrackInfo> m_Playlist;
   QVector<TrackInfo> m_Resultlist;
 
-  bool m_PlaylistLoaded;
-  int m_TrackPositionSec;
-  int m_TrackDurationSec;
-  int m_PlaylistPosition;
-  int m_PlaylistSelected;
-  int m_PlaylistOffset;
-  int m_VolumePercentage;
-  bool m_Shuffle;
-  bool m_ScrollTitle;
-  bool m_ViewPosition;
-  UIState m_UIState;
-  UIState m_PreviousUIState;
+  bool m_PlaylistLoaded = true;
+  int m_TrackPositionSec = 0;
+  int m_TrackDurationSec = 0;
+  int m_PlaylistPosition = 0;
+  int m_PlaylistSelected = 0;
+  int m_PlaylistOffset = 0;
+  int m_VolumePercentage = 100;
+  bool m_Shuffle = true;
+  bool m_ScrollTitle = false;
+  bool m_ViewPosition = true;
+  UIState m_UIState = UISTATE_PLAYER;
+  UIState m_PreviousUIState = UISTATE_PLAYER;
   QString m_SearchString;
-  int m_SearchStringPos;
-  QTimer* m_Timer;
+  int m_SearchStringPos = 0;
+  QTimer* m_Timer = nullptr;
   QElapsedTimer m_PlayTime;
 
-  bool m_SetPlaying;
-  bool m_SetPlayed;
+  bool m_SetPlaying = false;
+  bool m_SetPlayed = false;
 };
 

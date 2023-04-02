@@ -16,9 +16,21 @@ SOURCES              = src/audioplayer.cpp                     \
                        src/main.cpp                            \
                        src/log.cpp                             \
                        src/scrobbler.cpp                       \
-                       src/uikeyhandler.cpp                    \
-                       src/uiview.cpp                          \
                        src/util.cpp
+
+!DEVBUILD {
+TARGET               = namp
+INCLUDEPATH         += $$PWD/src
+SOURCES             += src/uikeyhandler.cpp                    \
+                       src/uiview.cpp
+}
+
+DEVBUILD {
+TARGET               = nmp123
+INCLUDEPATH         += $$PWD/src
+SOURCES             += dev/uikeyhandler.cpp                    \
+                       dev/uiview.cpp
+}
 
 LIBS                += -lncursesw                              \
                        -ltag

@@ -17,6 +17,7 @@ exiterr()
 # process arguments
 DEPS="0"
 BUILD="0"
+DEVBUILD="0"
 TESTS="0"
 DOC="0"
 INSTALL="0"
@@ -27,6 +28,10 @@ case "${1%/}" in
 
   build)
     BUILD="1"
+    ;;
+
+  devbuild)
+    DEVBUILD="1"
     ;;
 
   test*)
@@ -47,6 +52,7 @@ case "${1%/}" in
   all)
     DEPS="1"
     BUILD="1"
+    DEVBUILD="1"
     TESTS="1"
     DOC="1"
     INSTALL="1"
@@ -56,6 +62,7 @@ case "${1%/}" in
     echo "usage: make.sh <deps|build|tests|doc|install|all>"
     echo "  deps      - install project dependencies"
     echo "  build     - perform build"
+    echo "  devbuild  - perform dev build"
     echo "  tests     - perform build and run tests"
     echo "  doc       - perform build and generate documentation"
     echo "  install   - perform build and install"
@@ -92,6 +99,18 @@ if [[ "${BUILD}" == "1" ]]; then
     MAKEARGS="-j$(sysctl -n hw.ncpu)"
   fi
   mkdir -p build && cd build && qmake .. && make ${MAKEARGS} && cd .. || exiterr "build failed, exiting."
+fi
+
+# devbuild
+if [[ "${DEVBUILD}" == "1" ]]; then
+  OS="$(uname)"
+  MAKEARGS=""
+  if [ "${OS}" == "Linux" ]; then
+    MAKEARGS="-j$(nproc)"
+  elif [ "${OS}" == "Darwin" ]; then
+    MAKEARGS="-j$(sysctl -n hw.ncpu)"
+  fi
+  mkdir -p devbuild && cd devbuild && qmake CONFIG+=DEVBUILD .. && make ${MAKEARGS} && cd .. || exiterr "devbuild failed, exiting."
 fi
 
 # tests
