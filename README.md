@@ -1,5 +1,5 @@
-namp - ncurses audio media player
-=================================
+namp
+====
 
 | **Linux** | **Mac** |
 |-----------|---------|
