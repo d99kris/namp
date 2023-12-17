@@ -36,13 +36,16 @@ static int s_NewStdErr = -1;
 int main(int argc, char *argv[])
 {
   Log::SetPath("/tmp/namp.log");
- 
+  Log::SetDebugEnabled(false);
+
 #ifdef __APPLE__
   // Workaround for OS X not allowing audio playback from QCoreApplication
   QApplication application(argc, argv);
 #else
   QCoreApplication application(argc, argv);
 #endif
+
+  Log::Info("namp v" VERSION);
 
   // Handle arguments
   QStringList arguments = QCoreApplication::arguments();
@@ -116,6 +119,10 @@ int main(int argc, char *argv[])
   if (!user.empty() && !pass.empty())
   {
     scrobbler = new Scrobbler(&application, user, pass);
+  }
+  else
+  {
+    Log::Debug("Scrobbler disabled");
   }
 
   // Init ui
@@ -244,6 +251,13 @@ static void ShowHelp()
     "   ENTER             play selected track\n"
     "   TAB               toggle main window / playlist focus\n"
     "   s                 toggle shuffle on/off\n"
+    "\n"
+    "Config Path:\n"
+#ifdef __APPLE__
+    "   ~/Library/Preferences/se.nope.namp.plist\n"
+#else
+    "   ~/.config/nope/namp.conf\n"
+#endif
     "\n"
     "Report bugs at https://github.com/d99kris/namp/\n"
     "\n"

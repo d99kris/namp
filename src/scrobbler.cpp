@@ -33,6 +33,7 @@ Scrobbler::Scrobbler(QObject *p_Parent, const std::string& p_User, const std::st
   , m_AppVer(VERSION)
   , m_NetworkManager(new QNetworkAccessManager(this))
 {
+  Log::Debug("Scrobbler init");
   connect(m_NetworkManager, &QNetworkAccessManager::finished, this, &Scrobbler::OnFinished);
   Connect();
 }
@@ -167,6 +168,7 @@ void Scrobbler::OnFinished(QNetworkReply* p_Reply)
     }
     else
     {
+      Log::Debug("Session ok");
       m_SessionId = result[1];
       m_PlayingUrl = result[2];
       m_PlayedUrl = result[3];
@@ -179,6 +181,10 @@ void Scrobbler::OnFinished(QNetworkReply* p_Reply)
     {
       Log::Warning("Unexpected scrobbler response %s", stdString.c_str());
     }
+    else
+    {
+      Log::Debug("Playing ok");
+    }
   }
   else if (surl.find(m_PlayedUrl) == 0) // played
   {
@@ -186,6 +192,14 @@ void Scrobbler::OnFinished(QNetworkReply* p_Reply)
     {
       Log::Warning("Unexpected scrobbler response %s", stdString.c_str());
     }
+    else
+    {
+      Log::Debug("Played ok");
+    }
+  }
+  else
+  {
+    Log::Warning("Unhandled url %s", surl.c_str());
   }
 }
 
