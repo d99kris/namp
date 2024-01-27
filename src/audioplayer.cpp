@@ -49,7 +49,7 @@ AudioPlayer::~AudioPlayer()
 {
 }
 
-void AudioPlayer::SetPlaylist(const QStringList& p_Paths)
+void AudioPlayer::SetPlaylist(const QStringList& p_Paths, const QString& p_CurrentTrack)
 {
   foreach (QString const &path, p_Paths)
   {
@@ -81,9 +81,18 @@ void AudioPlayer::SetPlaylist(const QStringList& p_Paths)
 
   emit PlaylistUpdated(m_PlayListPaths);
 
-  if (m_Shuffle)
+  const int currentIndex = m_PlayListPaths.indexOf(p_CurrentTrack);
+  if (currentIndex != -1)
+  {
+    m_CurrentIndex = currentIndex;
+  }
+  else if (m_Shuffle)
   {
     m_CurrentIndex = rand() % m_PlayListPaths.size();
+  }
+  else
+  {
+    m_CurrentIndex = 0;
   }
 
   OnMediaChanged(true /*p_Forward*/);
@@ -166,6 +175,11 @@ void AudioPlayer::GetVolume(int& p_Volume)
 #else
   p_Volume = m_MediaPlayer.volume();
 #endif
+}
+
+void AudioPlayer::GetCurrentTrack(QString& p_CurrentTrack)
+{
+  p_CurrentTrack = m_CurrentTrack;
 }
 
 bool AudioPlayer::IsInited()
@@ -273,10 +287,11 @@ void AudioPlayer::OnMediaChanged(bool p_Forward)
     m_CurrentIndex = m_PlayListPaths.size() - 1;
   }
 
+  m_CurrentTrack = m_PlayListPaths.at(m_CurrentIndex);
 #if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
-  m_MediaPlayer.setSource(QUrl::fromLocalFile(m_PlayListPaths.at(m_CurrentIndex)));
+  m_MediaPlayer.setSource(QUrl::fromLocalFile(m_CurrentTrack));
 #else
-  m_MediaPlayer.setMedia(QUrl::fromLocalFile(m_PlayListPaths.at(m_CurrentIndex)));
+  m_MediaPlayer.setMedia(QUrl::fromLocalFile(m_CurrentTrack));
 #endif
   m_MediaPlayer.play();
 

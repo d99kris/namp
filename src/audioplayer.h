@@ -1,6 +1,6 @@
 // audioplayer.h
 //
-// Copyright (C) 2017-2023 Kristofer Berggren
+// Copyright (C) 2017-2024 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -23,9 +23,10 @@ class AudioPlayer : public QObject
 public:
   AudioPlayer(QObject *parent = NULL);
   ~AudioPlayer();
-  void SetPlaylist(const QStringList& paths);
+  void SetPlaylist(const QStringList& paths, const QString& p_CurrentTrack);
   void GetPlaybackMode(bool& p_Shuffle);
   void GetVolume(int& p_Volume);
+  void GetCurrentTrack(QString& p_CurrentTrack);
   bool IsInited();
 
 signals:
@@ -71,6 +72,7 @@ private:
   QVector<QString> m_PlayListPaths;
   bool m_Shuffle = false;
   int m_CurrentIndex = 0;
+  QString m_CurrentTrack;
   QList<int> m_CurrentIndexHistory;
 #if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
   QScopedPointer<QAudioOutput> m_AudioOutput;

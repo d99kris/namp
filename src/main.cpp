@@ -1,6 +1,6 @@
 // main.cpp
 //
-// Copyright (C) 2017-2023 Kristofer Berggren
+// Copyright (C) 2017-2024 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -178,13 +178,14 @@ int main(int argc, char *argv[])
   emit audioPlayer.SetPlaybackMode(shuffle);
   int volume = settings.value("player/volume", 100).toInt();
   emit audioPlayer.SetVolume(volume);
+  QString currentTrack = settings.value("player/track", "").toString();
   bool scrollTitle = settings.value("ui/scrolltitle", false).toBool();
   uiView.SetScrollTitle(scrollTitle);
   bool viewPosition = settings.value("ui/viewposition", true).toBool();
   uiView.SetViewPosition(viewPosition);
 
-  // Set playlist
-  audioPlayer.SetPlaylist(arguments);
+  // Set playlist and track
+  audioPlayer.SetPlaylist(arguments, currentTrack);
 
   // Start playback and main event loop
   emit audioPlayer.Play();
@@ -195,6 +196,8 @@ int main(int argc, char *argv[])
   settings.setValue("player/shuffle", shuffle);
   audioPlayer.GetVolume(volume);
   settings.setValue("player/volume", volume);
+  audioPlayer.GetCurrentTrack(currentTrack);
+  settings.setValue("player/track", currentTrack);
   uiView.GetScrollTitle(scrollTitle);
   settings.setValue("ui/scrolltitle", scrollTitle);
   uiView.GetViewPosition(viewPosition);
