@@ -1,6 +1,6 @@
 // audioplayer.cpp
 //
-// Copyright (C) 2017-2023 Kristofer Berggren
+// Copyright (C) 2017-2024 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -134,12 +134,16 @@ void AudioPlayer::VolumeDown()
 
 void AudioPlayer::SkipBackward()
 {
+  m_MediaPlayer.pause();
   m_MediaPlayer.setPosition(qBound(0ll, m_MediaPlayer.position() - 3000, m_MediaPlayer.duration()));
+  m_MediaPlayer.play();
 }
 
 void AudioPlayer::SkipForward()
 {
+  m_MediaPlayer.pause();
   m_MediaPlayer.setPosition(qBound(0ll, m_MediaPlayer.position() + 3000, m_MediaPlayer.duration()));
+  m_MediaPlayer.play();
 }
 
 void AudioPlayer::SetVolume(int p_VolumePercentage)
