@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
     }
 
     scrobbler = new Scrobbler(&application, user, pass);
-    
+
     settings.setValue("scrobbler/user", QString::fromStdString(user));
     settings.setValue("scrobbler/pass", QString::fromStdString(pass));
 
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
   QObject::connect(&audioPlayer, SIGNAL(DurationChanged(qint64)), &uiView, SLOT(DurationChanged(qint64)));
   QObject::connect(&audioPlayer, SIGNAL(CurrentIndexChanged(int)), &uiView, SLOT(CurrentIndexChanged(int)));
   QObject::connect(&audioPlayer, SIGNAL(VolumeChanged(int)), &uiView, SLOT(VolumeChanged(int)));
-  QObject::connect(&audioPlayer, SIGNAL(PlaybackModeUpdated(bool)), &uiView, SLOT(PlaybackModeUpdated(bool)));  
+  QObject::connect(&audioPlayer, SIGNAL(PlaybackModeUpdated(bool)), &uiView, SLOT(PlaybackModeUpdated(bool)));
   QObject::connect(&uiKeyhandler, SIGNAL(Search()), &uiView, SLOT(Search()));
   QObject::connect(&uiKeyhandler, SIGNAL(SelectPrevious()), &uiView, SLOT(SelectPrevious()));
   QObject::connect(&uiKeyhandler, SIGNAL(SelectNext()), &uiView, SLOT(SelectNext()));
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 
   // Signals to ui key handler
   QSocketNotifier socketNotifier(fileno(stdin), QSocketNotifier::Read, &application);
-  QObject::connect(&socketNotifier, SIGNAL(activated(int)), &uiKeyhandler, SLOT(ProcessKeyEvent()));  
+  QObject::connect(&socketNotifier, SIGNAL(activated(int)), &uiKeyhandler, SLOT(ProcessKeyEvent()));
   QObject::connect(&uiView, SIGNAL(UIStateUpdated(UIState)), &uiKeyhandler, SLOT(UIStateUpdated(UIState)));
   QObject::connect(&uiView, SIGNAL(ProcessMouseEvent(const UIMouseEvent&)), &uiKeyhandler, SLOT(ProcessMouseEvent(const UIMouseEvent&)));
 
@@ -235,7 +235,7 @@ static void ShowHelp()
     "   namp ~/Music      play all files in ~/Music\n"
     "   namp hello.mp3    play hello.mp3\n"
     "\n"
-    "Interactive Commands:\n" 
+    "Interactive Commands:\n"
     "   z                 previous track\n"
     "   x                 play\n"
     "   c                 pause\n"

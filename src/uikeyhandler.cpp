@@ -1,6 +1,6 @@
 // uikeyhandler.cpp
 //
-// Copyright (C) 2017-2023 Kristofer Berggren
+// Copyright (C) 2017-2024 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -18,7 +18,6 @@ UIKeyhandler::UIKeyhandler(QObject *p_Parent /* = NULL */)
   , m_KeyhandlerWindow(newwin(1, 1, 1, 1))
   , m_UIState(UISTATE_PLAYER)
 {
-  cbreak();
   curs_set(0);
   wtimeout(m_KeyhandlerWindow, 0);
   keypad(m_KeyhandlerWindow, TRUE);

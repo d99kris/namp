@@ -1,6 +1,6 @@
 // uiview.cpp
 //
-// Copyright (C) 2017-2023 Kristofer Berggren
+// Copyright (C) 2017-2024 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -13,6 +13,7 @@
 #include <QVector>
 
 #include <locale.h>
+#include <signal.h>
 #include <wchar.h>
 
 #include <ncurses.h>
@@ -43,6 +44,9 @@ UIView::UIView(QObject *p_Parent, Scrobbler* p_Scrobbler)
   setlocale(LC_ALL, "");
   initscr();
   noecho();
+  raw();
+  keypad(stdscr, TRUE);
+  signal(SIGINT, SIG_IGN);
 
   QTimer::singleShot(0, this, &UIView::Timer);
   m_Timer = new QTimer();
@@ -92,7 +96,7 @@ void UIView::PositionChanged(qint64 p_Position)
       m_SetPlayed = false;
       m_PlayTime.restart();
     }
-    
+
     const qint64 elapsedSec = m_PlayTime.elapsed() / 1000;
     if (!m_SetPlayed && (elapsedSec >= 10) && (m_TrackPositionSec >= (m_TrackDurationSec / 2))) // scrobble played after 50% (min 10 sec)
     {
@@ -193,7 +197,7 @@ void UIView::ToggleWindow()
     case UISTATE_PLAYER:
       SetUIState(UISTATE_PLAYLIST);
       break;
-            
+
     case UISTATE_PLAYLIST:
       SetUIState(UISTATE_PLAYER);
       break;
@@ -339,7 +343,7 @@ void UIView::DrawPlayer()
     {
       mvwprintw(m_PlayerWindow, 1, 3, "      ");
     }
-        
+
     // Track title
     mvwprintw(m_PlayerWindow, 1, 11, "%.*s", -m_TitleWidth, "");
     std::string fullName = GetPlayerTrackName(m_TitleWidth).toStdString();
@@ -433,7 +437,7 @@ QString UIView::GetPlayerTrackName(int p_MaxLength)
       trackName = trackName.left(p_MaxLength);
     }
   }
-    
+
   return trackName;
 }
 
@@ -498,7 +502,8 @@ void UIView::KeyPress(int p_Key) // can move this to other slots later.
       }
       break;
 
-    case 27:
+    case 3: // CTRLC
+    case 27: // ESC
       SetUIState(m_PreviousUIState);
       break;
 
@@ -588,7 +593,7 @@ void UIView::DrawPlaylist()
         std::wstring trackName = Util::TrimPadWString(L"", viewLength);
         mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName.c_str(), viewLength);
       }
-      
+
       // Title
       wattron(m_PlaylistWindow, A_BOLD);
       const int searchStrLength = m_PlaylistWindowWidth - s_SearchWidthPad;
@@ -645,10 +650,10 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
 
     // Previous
     else if ((p_Y == 4) && (p_X >= 2) && (p_X <= 3)) emit ProcessMouseEvent(UIMouseEvent(UIELEM_PREVIOUS, 0));
-        
+
     // Play
     else if ((p_Y == 4) && (p_X >= 5) && (p_X <= 6)) emit ProcessMouseEvent(UIMouseEvent(UIELEM_PLAY, 0));
-        
+
     // Pause
     else if ((p_Y == 4) && (p_X >= 8) && (p_X <= 9)) emit ProcessMouseEvent(UIMouseEvent(UIELEM_PAUSE, 0));
 
@@ -724,7 +729,7 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
 void UIView::LoadTracksData()
 {
   if (m_PlaylistLoaded) return;
-    
+
   QElapsedTimer loadTime;
   loadTime.start();
   int i = 0;
