@@ -78,7 +78,7 @@ if [[ "${DEPS}" == "1" ]]; then
     DISTRO="$(lsb_release -i | awk -F':\t' '{print $2}')"
     if [[ "${DISTRO}" == "Ubuntu" ]]; then
       sudo apt -y update && \
-      sudo apt -y install libncursesw5-dev libtag1-dev qt5-default qt5-qmake qtmultimedia5-dev libqt5multimedia5-plugins ubuntu-restricted-extras || exiterr "deps failed (linux), exiting."
+      sudo apt -y install libncursesw5-dev libtag1-dev qt6-base-dev qt6-multimedia-dev gstreamer1.0-pulseaudio ubuntu-restricted-extras || exiterr "deps failed (linux), exiting."
     else
       exiterr "deps failed (unsupported linux distro ${DISTRO}), exiting."
     fi
@@ -93,24 +93,30 @@ fi
 if [[ "${BUILD}" == "1" ]]; then
   OS="$(uname)"
   MAKEARGS=""
+  QMAKE="qmake"
   if [ "${OS}" == "Linux" ]; then
     MAKEARGS="-j$(nproc)"
+    QMAKE="qmake6"
   elif [ "${OS}" == "Darwin" ]; then
     MAKEARGS="-j$(sysctl -n hw.ncpu)"
+    QMAKE="qmake"
   fi
-  mkdir -p build && cd build && qmake .. && make ${MAKEARGS} && cd .. || exiterr "build failed, exiting."
+  mkdir -p build && cd build && ${QMAKE} .. && make ${MAKEARGS} && cd .. || exiterr "build failed, exiting."
 fi
 
 # devbuild
 if [[ "${DEVBUILD}" == "1" ]]; then
   OS="$(uname)"
   MAKEARGS=""
+  QMAKE="qmake"
   if [ "${OS}" == "Linux" ]; then
     MAKEARGS="-j$(nproc)"
+    QMAKE="qmake6"
   elif [ "${OS}" == "Darwin" ]; then
     MAKEARGS="-j$(sysctl -n hw.ncpu)"
+    QMAKE="qmake"
   fi
-  mkdir -p devbuild && cd devbuild && qmake CONFIG+=DEVBUILD .. && make ${MAKEARGS} && cd .. || exiterr "devbuild failed, exiting."
+  mkdir -p devbuild && cd devbuild && ${QMAKE} CONFIG+=DEVBUILD .. && make ${MAKEARGS} && cd .. || exiterr "devbuild failed, exiting."
 fi
 
 # tests
