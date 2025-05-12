@@ -6,10 +6,10 @@ namp
 | [![Linux](https://github.com/d99kris/namp/workflows/Linux/badge.svg)](https://github.com/d99kris/namp/actions?query=workflow%3ALinux) | [![macOS](https://github.com/d99kris/namp/workflows/macOS/badge.svg)](https://github.com/d99kris/namp/actions?query=workflow%3AmacOS) |
 
 namp is a terminal-based MP3 player for Linux and macOS, implemented in C++ / Qt.
-For systems which do not have Qt available, a lite version of namp 
+For systems which do not have Qt available, a lite version of namp
 [namp-lite](https://github.com/d99kris/namp-lite) (Linux only) is available.
 
-![screenshot](/res/namp-screenshot.png) 
+![screenshot](/res/namp-screenshot.png)
 
 
 Usage
@@ -54,17 +54,22 @@ Interactive Commands:
 
 Supported Platforms
 ===================
-namp is primarily developed and tested on Linux, but basic functionality should work in macOS / OS X as well. Current version has been tested on:
+namp is primarily developed and tested on macOS, but basic functionality should
+work on Linux as well. Current version has been tested on:
 
-- macOS Big Sur 11.0
-- Ubuntu 20.04 LTS
+- macOS Sequoia 15.4
+- Ubuntu 24.04 LTS
 
-Linux / Ubuntu
-==============
+Linux
+=====
 
-**Dependencies**
+**Dependencies Ubuntu 20.04**
 
     sudo apt install libncursesw5-dev libtag1-dev qt5-default qt5-qmake qtmultimedia5-dev libqt5multimedia5-plugins ubuntu-restricted-extras
+
+**Dependencies Ubuntu 22.04 onwards**
+
+    sudo apt install libncursesw5-dev libtag1-dev qt6-base-dev qt6-multimedia-dev gstreamer1.0-pulseaudio ubuntu-restricted-extras
 
 **Source**
 
@@ -104,5 +109,6 @@ namp is distributed under GPLv2 license. See LICENSE file.
 
 Keywords
 ========
-command line, console-based, linux, macos, mp3 player, music player, ncurses, terminal-based.
+command line, console-based, linux, macos, mp3 player, music player, ncurses,
+terminal-based.
 
