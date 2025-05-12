@@ -8,5 +8,6 @@ Qt multimedia plugins are installed.
 Qt 5
 ----
 **Debian / Ubuntu**
+
     sudo apt install libqt5multimedia5-plugins
 
