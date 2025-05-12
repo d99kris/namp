@@ -1,6 +1,6 @@
 // main.cpp
 //
-// Copyright (C) 2017-2024 Kristofer Berggren
+// Copyright (C) 2017-2025 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -14,10 +14,15 @@
 #ifdef __APPLE__
 #include <QApplication>
 #endif
+#include <QAudioDecoder>
 #include <QCoreApplication>
 #include <QSettings>
 #include <QSocketNotifier>
 #include <QTimer>
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QMediaFormat>
+#endif
 
 #include "audioplayer.h"
 #include "log.h"
@@ -103,6 +108,18 @@ int main(int argc, char *argv[])
     settings.setValue("scrobbler/pass", QString::fromStdString(pass));
 
     return 0;
+  }
+
+  // Check dependencies
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  const bool isMp3DecodeSupported = QMediaFormat(QMediaFormat::MP3).isSupported(QMediaFormat::Decode);
+#else
+  const bool isMp3DecodeSupported = QAudioDecoder::hasSupport("audio/mpeg");
+#endif
+  if (!isMp3DecodeSupported)
+  {
+    std::cout << "warning: mp3 decode support not detected, please see:\n";
+    std::cout << "https://github.com/d99kris/namp/blob/master/doc/CODECS.md\n";
   }
 
   // Init player
@@ -255,12 +272,11 @@ static void ShowHelp()
     "   TAB               toggle main window / playlist focus\n"
     "   s                 toggle shuffle on/off\n"
     "\n"
-    "Config Path:\n"
-#ifdef __APPLE__
-    "   ~/Library/Preferences/se.nope.namp.plist\n"
-#else
+    "Config Path Linux:\n"
     "   ~/.config/nope/namp.conf\n"
-#endif
+    "\n"
+    "Config Path macOS:\n"
+    "   ~/Library/Preferences/se.nope.namp.plist\n"
     "\n"
     "Report bugs at https://github.com/d99kris/namp/\n"
     "\n"
@@ -272,7 +288,7 @@ static void ShowVersion()
   std::cout <<
     "namp v" VERSION "\n"
     "\n"
-    "Copyright (C) 2015-2024 Kristofer Berggren\n"
+    "Copyright (C) 2015-2025 Kristofer Berggren\n"
     "This is free software; see the source for copying\n"
     "conditions. There is NO warranty; not even for\n"
     "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
