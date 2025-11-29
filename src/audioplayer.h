@@ -1,6 +1,6 @@
 // audioplayer.h
 //
-// Copyright (C) 2017-2024 Kristofer Berggren
+// Copyright (C) 2017-2025 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -43,10 +43,12 @@ signals:
   void PlaylistUpdated(const QVector<QString>& paths);
   void CurrentIndexChanged(int p_Position);
   void PlaybackModeUpdated(bool p_Shuffle);
+  void RefreshTrackData(int p_TrackIndex);
 
 public slots:
   void SetPlaybackMode(bool p_Shuffle);
   void ToggleShuffle();
+  void ExternalEdit(int p_SelectedIndex);
   void VolumeUp();
   void VolumeDown();
   void SkipBackward();

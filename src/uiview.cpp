@@ -1,6 +1,6 @@
 // uiview.cpp
 //
-// Copyright (C) 2017-2024 Kristofer Berggren
+// Copyright (C) 2017-2025 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -45,6 +45,7 @@ UIView::UIView(QObject *p_Parent, Scrobbler* p_Scrobbler)
   initscr();
   noecho();
   raw();
+  timeout(0);
   keypad(stdscr, TRUE);
   signal(SIGINT, SIG_IGN);
 
@@ -240,12 +241,12 @@ void UIView::Refresh()
   DrawPlaylist();
 }
 
-void UIView::UpdateScreen()
+void UIView::UpdateScreen(bool p_Force /*= false*/)
 {
   int terminalWidth = -1;
   int terminalHeight = -1;
   getmaxyx(stdscr, terminalHeight, terminalWidth);
-  if ((terminalWidth != m_TerminalWidth) || (terminalHeight != m_TerminalHeight))
+  if (p_Force || (terminalWidth != m_TerminalWidth) || (terminalHeight != m_TerminalHeight))
   {
     m_TerminalWidth = terminalWidth;
     m_TerminalHeight = terminalHeight;
@@ -763,6 +764,22 @@ void UIView::LoadTracksData()
   }
 }
 
+void UIView::RefreshTrackData(int p_TrackIndex)
+{
+  m_Playlist[p_TrackIndex].loaded = false;
+  m_PlaylistLoaded = false;
+
+  if (p_TrackIndex == m_PlaylistPosition)
+  {
+    m_SetPlaying = false;
+    m_SetPlayed = false;
+  }
+
+  UpdateScreen(true /*p_Force*/);
+  DrawPlayer();
+  DrawPlaylist();
+}
+
 void UIView::SetPlaylistSelected(int p_SelectedTrack, bool p_UpdateOffset)
 {
   m_PlaylistSelected = qBound(0, p_SelectedTrack, (m_Playlist.count() - 1));
@@ -800,3 +817,7 @@ void UIView::SetViewPosition(const bool& p_ViewPosition)
   m_ViewPosition = p_ViewPosition;
 }
 
+void UIView::ExternalEdit()
+{
+  emit ExternalEdit(m_PlaylistSelected);
+}

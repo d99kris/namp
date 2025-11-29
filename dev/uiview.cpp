@@ -61,7 +61,7 @@ void UIView::PositionChanged(qint64 p_Position)
       m_SetPlayed = false;
       m_PlayTime.restart();
     }
-    
+
     const qint64 elapsedSec = m_PlayTime.elapsed() / 1000;
     if (!m_SetPlayed && (elapsedSec >= 10) && (m_TrackPositionSec >= (m_TrackDurationSec / 2))) // scrobble played after 50% (min 10 sec)
     {
@@ -178,7 +178,7 @@ void UIView::Refresh()
 {
 }
 
-void UIView::UpdateScreen()
+void UIView::UpdateScreen(bool /*p_Force = false*/)
 {
 }
 
@@ -238,4 +238,12 @@ void UIView::GetViewPosition(bool& p_ViewPosition)
 void UIView::SetViewPosition(const bool& p_ViewPosition)
 {
   m_ViewPosition = p_ViewPosition;
+}
+
+void UIView::RefreshTrackData(int /*p_TrackIndex*/)
+{
+}
+
+void UIView::ExternalEdit()
+{
 }

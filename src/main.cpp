@@ -162,6 +162,8 @@ int main(int argc, char *argv[])
   QObject::connect(&uiKeyhandler, SIGNAL(SkipForward()), &audioPlayer, SLOT(SkipForward()));
   QObject::connect(&uiKeyhandler, SIGNAL(SetVolume(int)), &audioPlayer, SLOT(SetVolume(int)));
   QObject::connect(&uiKeyhandler, SIGNAL(SetPosition(int)), &audioPlayer, SLOT(SetPosition(int)));
+  QObject::connect(&uiKeyhandler, SIGNAL(ExternalEdit()), &uiView, SLOT(ExternalEdit()));
+  QObject::connect(&uiView, SIGNAL(ExternalEdit(int)), &audioPlayer, SLOT(ExternalEdit(int)));
   QObject::connect(&uiView, SIGNAL(SetCurrentIndex(int)), &audioPlayer, SLOT(SetCurrentIndex(int)));
   QObject::connect(&uiView, SIGNAL(Play()), &audioPlayer, SIGNAL(Play()));
 
@@ -172,6 +174,7 @@ int main(int argc, char *argv[])
   QObject::connect(&audioPlayer, SIGNAL(CurrentIndexChanged(int)), &uiView, SLOT(CurrentIndexChanged(int)));
   QObject::connect(&audioPlayer, SIGNAL(VolumeChanged(int)), &uiView, SLOT(VolumeChanged(int)));
   QObject::connect(&audioPlayer, SIGNAL(PlaybackModeUpdated(bool)), &uiView, SLOT(PlaybackModeUpdated(bool)));
+  QObject::connect(&audioPlayer, SIGNAL(RefreshTrackData(int)), &uiView, SLOT(RefreshTrackData(int)));
   QObject::connect(&uiKeyhandler, SIGNAL(Search()), &uiView, SLOT(Search()));
   QObject::connect(&uiKeyhandler, SIGNAL(SelectPrevious()), &uiView, SLOT(SelectPrevious()));
   QObject::connect(&uiKeyhandler, SIGNAL(SelectNext()), &uiView, SLOT(SelectNext()));
@@ -270,6 +273,7 @@ static void ShowHelp()
     "   pgdn              playlist next page\n"
     "   ENTER             play selected track\n"
     "   TAB               toggle main window / playlist focus\n"
+    "   e                 external tag editor\n"
     "   s                 toggle shuffle on/off\n"
     "\n"
     "Config Path Linux:\n"

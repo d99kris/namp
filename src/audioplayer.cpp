@@ -1,6 +1,6 @@
 // audioplayer.cpp
 //
-// Copyright (C) 2017-2024 Kristofer Berggren
+// Copyright (C) 2017-2025 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "audioplayer.h"
+#include "util.h"
 
 AudioPlayer::AudioPlayer(QObject *p_Parent /* = NULL */)
   : QObject(p_Parent)
@@ -113,6 +114,19 @@ void AudioPlayer::ToggleShuffle()
 {
   m_Shuffle = !m_Shuffle;
   emit PlaybackModeUpdated(m_Shuffle);
+}
+
+void AudioPlayer::ExternalEdit(int p_SelectedIndex)
+{
+  m_MediaPlayer.pause();
+  QString selectedTrackPath = m_PlayListPaths.at(p_SelectedIndex);
+  QString cmd = "idntag --edit --report \"\" \"" + selectedTrackPath + "\"";
+  bool result = Util::RunProgram(cmd.toStdString());
+  m_MediaPlayer.play();
+  if (result)
+  {
+    emit RefreshTrackData(p_SelectedIndex);
+  }
 }
 
 void AudioPlayer::VolumeUp()

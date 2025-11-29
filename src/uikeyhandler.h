@@ -1,6 +1,6 @@
 // uikeyhandler.h
 //
-// Copyright (C) 2017-2023 Kristofer Berggren
+// Copyright (C) 2017-2025 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -40,6 +40,7 @@ signals:
   void SkipBackward();
   void SkipForward();
   void ToggleShuffle();
+  void ExternalEdit();
   void Search();
   void SelectPrevious();
   void SelectNext();

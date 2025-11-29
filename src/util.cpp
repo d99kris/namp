@@ -1,6 +1,6 @@
 // util.cpp
 //
-// Copyright (c) 2022 Kristofer Berggren
+// Copyright (c) 2022-2025 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -11,6 +11,24 @@
 #include <algorithm>
 #include <codecvt>
 #include <locale>
+
+#include <ncurses.h>
+
+bool Util::RunProgram(const std::string& p_Cmd)
+{
+  endwin();
+
+  int rv = system(p_Cmd.c_str());
+
+  refresh();
+  wint_t key = 0;
+  while (get_wch(&key) != ERR)
+  {
+    // Discard any remaining input
+  }
+
+  return (rv == 0);
+}
 
 std::string Util::ToString(const std::wstring& p_WStr)
 {

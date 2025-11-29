@@ -1,6 +1,6 @@
 // uikeyhandler.cpp
 //
-// Copyright (C) 2017-2024 Kristofer Berggren
+// Copyright (C) 2017-2025 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -43,7 +43,7 @@ void UIKeyhandler::ProcessKeyEvent()
     emit KeyPress(key);
     return;
   }
-        
+
   switch (key)
   {
     case 'z':
@@ -132,6 +132,11 @@ void UIKeyhandler::ProcessKeyEvent()
     case 's':
     case 'S':
       emit ToggleShuffle();
+      break;
+
+    case 'e':
+    case 'E':
+      emit ExternalEdit();
       break;
 
     case KEY_MOUSE:

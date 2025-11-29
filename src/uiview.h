@@ -1,6 +1,6 @@
 // uiview.h
 //
-// Copyright (C) 2017-2023 Kristofer Berggren
+// Copyright (C) 2017-2025 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -33,7 +33,7 @@ struct TrackInfo
     , index(p_Index)
   {
   }
-    
+
   QString path;
   QString name; // artist - title
   QString artist;
@@ -75,6 +75,8 @@ public slots:
   void ToggleWindow();
   void KeyPress(int p_Key);
   void MouseEventRequest(int p_X, int p_Y, uint32_t p_Button);
+  void RefreshTrackData(int p_TrackIndex);
+  void ExternalEdit();
 
 private slots:
   void Timer();
@@ -84,11 +86,12 @@ signals:
   void SetCurrentIndex(int);
   void ProcessMouseEvent(const UIMouseEvent& p_UIMouseEvent);
   void Play();
+  void ExternalEdit(int);
 
 private:
   void SetUIState(UIState p_UIState);
   void Refresh();
-  void UpdateScreen();
+  void UpdateScreen(bool p_Force = false);
   void DeleteWindows();
   void CreateWindows();
   void DrawPlayer();
@@ -99,7 +102,7 @@ private:
 
 private:
   Scrobbler* m_Scrobbler = nullptr;
-  
+
   int m_TerminalWidth = -1;
   int m_TerminalHeight = -1;
 

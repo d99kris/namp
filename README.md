@@ -50,6 +50,7 @@ Interactive Commands:
     pgdn              playlist next page
     ENTER             play selected track
     TAB               toggle main window / playlist focus
+    e                 external tag editor
     s                 toggle shuffle on/off
 
 Supported Platforms
@@ -103,6 +104,11 @@ macOS
 
     make -s install
 
+External Tools
+==============
+Using external tag editor requires [idntag](https://github.com/d99kris/idntag)
+to be installed on the system.
+
 License
 =======
 namp is distributed under GPLv2 license. See LICENSE file.
@@ -111,4 +117,3 @@ Keywords
 ========
 command line, console-based, linux, macos, mp3 player, music player, ncurses,
 terminal-based.
-
