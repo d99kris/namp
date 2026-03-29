@@ -1,6 +1,6 @@
 // audioplayer.cpp
 //
-// Copyright (C) 2017-2025 Kristofer Berggren
+// Copyright (C) 2017-2026 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "audioplayer.h"
+#include "log.h"
 #include "util.h"
 
 AudioPlayer::AudioPlayer(QObject *p_Parent /* = NULL */)
@@ -37,12 +38,18 @@ AudioPlayer::AudioPlayer(QObject *p_Parent /* = NULL */)
   connect(&m_MediaPlayer, &QMediaPlayer::mediaStatusChanged, this, &AudioPlayer::OnMediaStatusChanged);
   connect(&m_MediaPlayer, &QMediaPlayer::positionChanged, this, &AudioPlayer::PositionChanged);
   connect(&m_MediaPlayer, &QMediaPlayer::durationChanged, this, &AudioPlayer::DurationChanged);
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+  connect(&m_MediaPlayer, &QMediaPlayer::errorOccurred, this, &AudioPlayer::OnErrorOccurred);
+#else
+  connect(&m_MediaPlayer, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this, &AudioPlayer::OnErrorOccurred);
+#endif
 
 #if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
   QAudioDevice audioDevice(QMediaDevices::defaultAudioOutput());
   m_AudioOutput.reset(new QAudioOutput());
   m_AudioOutput->setDevice(audioDevice);
   m_MediaPlayer.setAudioOutput(m_AudioOutput.get());
+  connect(&m_MediaDevices, &QMediaDevices::audioOutputsChanged, this, &AudioPlayer::OnAudioOutputsChanged);
 #endif
 }
 
@@ -212,12 +219,67 @@ void AudioPlayer::SetPosition(int p_PositionPercentage)
 
 void AudioPlayer::OnMediaStatusChanged(QMediaPlayer::MediaStatus p_MediaStatus)
 {
-  if ((p_MediaStatus == QMediaPlayer::EndOfMedia) ||
-      (p_MediaStatus == QMediaPlayer::InvalidMedia))
+  static const char* statusNames[] = {
+    "UnknownMediaStatus", "NoMedia", "LoadingMedia", "LoadedMedia",
+    "StalledMedia", "BufferingMedia", "BufferedMedia", "EndOfMedia", "InvalidMedia"
+  };
+  const int idx = static_cast<int>(p_MediaStatus);
+  const char* statusName = (idx >= 0 && idx <= 8) ? statusNames[idx] : "Unknown";
+  Log::Debug("OnMediaStatusChanged: %s (%d) track=%s", statusName, idx,
+             m_CurrentTrack.toStdString().c_str());
+
+  if (p_MediaStatus == QMediaPlayer::EndOfMedia)
   {
     Next();
   }
+  else if (p_MediaStatus == QMediaPlayer::InvalidMedia)
+  {
+    Log::Warning("InvalidMedia for track=%s error=%s",
+                 m_CurrentTrack.toStdString().c_str(),
+                 m_MediaPlayer.errorString().toStdString().c_str());
+    Next();
+  }
 }
+
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+void AudioPlayer::OnErrorOccurred(QMediaPlayer::Error p_Error, const QString& p_ErrorString)
+{
+  Log::Warning("QMediaPlayer error %d: %s (track=%s)", static_cast<int>(p_Error),
+               p_ErrorString.toStdString().c_str(), m_CurrentTrack.toStdString().c_str());
+}
+
+void AudioPlayer::OnAudioOutputsChanged()
+{
+  QAudioDevice newDevice = QMediaDevices::defaultAudioOutput();
+  if (newDevice.isNull())
+  {
+    Log::Warning("Audio output device lost, no available output devices");
+    m_MediaPlayer.stop();
+    return;
+  }
+
+  Log::Info("Audio output device changed, switching to: %s",
+            newDevice.description().toStdString().c_str());
+  m_AudioOutput->setDevice(newDevice);
+
+  // Re-start playback on the new device if we were playing
+  if (m_MediaPlayer.playbackState() == QMediaPlayer::PlayingState)
+  {
+    qint64 pos = m_MediaPlayer.position();
+    m_MediaPlayer.stop();
+    m_MediaPlayer.setSource(QUrl::fromLocalFile(m_CurrentTrack));
+    m_MediaPlayer.setPosition(pos);
+    m_MediaPlayer.play();
+  }
+}
+#else
+void AudioPlayer::OnErrorOccurred(QMediaPlayer::Error p_Error)
+{
+  Log::Warning("QMediaPlayer error %d: %s (track=%s)", static_cast<int>(p_Error),
+               m_MediaPlayer.errorString().toStdString().c_str(),
+               m_CurrentTrack.toStdString().c_str());
+}
+#endif
 
 void AudioPlayer::Pause()
 {
@@ -265,6 +327,7 @@ void AudioPlayer::Previous()
 
 void AudioPlayer::Next()
 {
+  Log::Debug("Next() called, currentIndex=%d", m_CurrentIndex);
   if (m_Shuffle && (m_PlayListPaths.size() > 2))
   {
     int newIndex = m_CurrentIndex;

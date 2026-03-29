@@ -1,6 +1,6 @@
 // audioplayer.h
 //
-// Copyright (C) 2017-2025 Kristofer Berggren
+// Copyright (C) 2017-2026 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -12,6 +12,10 @@
 
 #include <QObject>
 #include <QMediaPlayer>
+
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+#include <QMediaDevices>
+#endif
 
 #include <string>
 #include <vector>
@@ -63,6 +67,12 @@ public slots:
 
 private slots:
   void OnMediaStatusChanged(QMediaPlayer::MediaStatus p_MediaStatus);
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+  void OnErrorOccurred(QMediaPlayer::Error p_Error, const QString& p_ErrorString);
+  void OnAudioOutputsChanged();
+#else
+  void OnErrorOccurred(QMediaPlayer::Error p_Error);
+#endif
 
 private:
   void OnMediaChanged(bool p_Forward);
@@ -78,5 +88,6 @@ private:
   QList<int> m_CurrentIndexHistory;
 #if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
   QScopedPointer<QAudioOutput> m_AudioOutput;
+  QMediaDevices m_MediaDevices;
 #endif
 };
