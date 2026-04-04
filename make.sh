@@ -17,6 +17,7 @@ exiterr()
 # process arguments
 DEPS="0"
 BUILD="0"
+DEBUG="0"
 DEVBUILD="0"
 TESTS="0"
 DOC="0"
@@ -28,6 +29,10 @@ case "${1%/}" in
 
   build)
     BUILD="1"
+    ;;
+
+  debug)
+    DEBUG="1"
     ;;
 
   devbuild)
@@ -52,6 +57,7 @@ case "${1%/}" in
   all)
     DEPS="1"
     BUILD="1"
+    DEBUG="1"
     DEVBUILD="1"
     TESTS="1"
     DOC="1"
@@ -59,9 +65,10 @@ case "${1%/}" in
     ;;
 
   *)
-    echo "usage: make.sh <deps|build|tests|doc|install|all>"
+    echo "usage: make.sh <deps|build|debug|tests|doc|install|all>"
     echo "  deps      - install project dependencies"
     echo "  build     - perform build"
+    echo "  debug     - perform debug build with symbols"
     echo "  devbuild  - perform dev build"
     echo "  tests     - perform build and run tests"
     echo "  doc       - perform build and generate documentation"
@@ -102,6 +109,25 @@ if [[ "${BUILD}" == "1" ]]; then
     QMAKE="qmake"
   fi
   mkdir -p build && cd build && ${QMAKE} .. && make ${MAKEARGS} && cd .. || exiterr "build failed, exiting."
+fi
+
+# debug
+if [[ "${DEBUG}" == "1" ]]; then
+  OS="$(uname)"
+  MAKEARGS=""
+  QMAKE="qmake"
+  if [ "${OS}" == "Linux" ]; then
+    MAKEARGS="-j$(nproc)"
+    QMAKE="qmake6"
+  elif [ "${OS}" == "Darwin" ]; then
+    MAKEARGS="-j$(sysctl -n hw.ncpu)"
+    QMAKE="qmake"
+  fi
+  mkdir -p dbgbuild && cd dbgbuild && ${QMAKE} "QMAKE_CXXFLAGS+=-g" "QMAKE_CFLAGS+=-g" "QMAKE_LFLAGS+=-g" "QMAKE_CXXFLAGS_RELEASE-=-O2" "QMAKE_CXXFLAGS_RELEASE+=-O0" "QMAKE_CFLAGS_RELEASE-=-O2" "QMAKE_CFLAGS_RELEASE+=-O0" .. && make ${MAKEARGS} || exiterr "debug build failed, exiting."
+  if [ "${OS}" == "Darwin" ]; then
+    dsymutil namp -o namp.dSYM || exiterr "dsymutil failed, exiting."
+  fi
+  cd ..
 fi
 
 # devbuild

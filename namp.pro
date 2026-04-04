@@ -1,6 +1,6 @@
 TARGET               = namp
 TEMPLATE             = app
-CONFIG              += c++11 debug cmdline
+CONFIG              += c++11 release cmdline
 QT                  += core multimedia
 
 HEADERS              = src/audioplayer.h                       \
