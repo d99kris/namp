@@ -36,9 +36,6 @@ public:
   bool IsInited();
 
 signals:
-  // Signals to media player
-  void Play();
-  void Stop();
 
   // Signals from media player
   void PositionChanged(qint64 p_Position);
@@ -62,7 +59,9 @@ public slots:
   void SkipForward();
   void SetVolume(int);
   void SetPosition(int);
+  void Play();
   void Pause();
+  void Stop();
 
   void Previous();
   void Next();

@@ -74,6 +74,11 @@ bool Spectrum::IsRunning() const
   return m_Timer.isActive();
 }
 
+void Spectrum::SetPaused(bool p_Paused)
+{
+  m_Paused = p_Paused;
+}
+
 void Spectrum::OnTimer()
 {
   static int timerCount = 0;
@@ -96,7 +101,7 @@ void Spectrum::OnTimer()
     ProcessDecoderBuffer();
   }
 
-  if (m_SpectrumData.isEmpty()) return;
+  if (m_SpectrumData.isEmpty() || m_Paused) return;
 
   // Compensate for audio output buffer latency
   static const qint64 kLatencyOffsetMs = 175;

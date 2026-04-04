@@ -151,9 +151,9 @@ int main(int argc, char *argv[])
 
   // Signals to audio player
   QObject::connect(&uiKeyhandler, SIGNAL(Previous()), &audioPlayer, SLOT(Previous()));
-  QObject::connect(&uiKeyhandler, SIGNAL(Play()), &audioPlayer, SIGNAL(Play()));
+  QObject::connect(&uiKeyhandler, SIGNAL(Play()), &audioPlayer, SLOT(Play()));
   QObject::connect(&uiKeyhandler, SIGNAL(Pause()), &audioPlayer, SLOT(Pause()));
-  QObject::connect(&uiKeyhandler, SIGNAL(Stop()), &audioPlayer, SIGNAL(Stop()));
+  QObject::connect(&uiKeyhandler, SIGNAL(Stop()), &audioPlayer, SLOT(Stop()));
   QObject::connect(&uiKeyhandler, SIGNAL(Next()), &audioPlayer, SLOT(Next()));
   QObject::connect(&uiKeyhandler, SIGNAL(ToggleShuffle()), &audioPlayer, SLOT(ToggleShuffle()));
   QObject::connect(&uiKeyhandler, SIGNAL(VolumeUp()), &audioPlayer, SLOT(VolumeUp()));
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
   QObject::connect(&uiKeyhandler, SIGNAL(ToggleAnalyzer()), &uiView, SLOT(ToggleAnalyzer()));
   QObject::connect(&uiView, SIGNAL(ExternalEdit(int)), &audioPlayer, SLOT(ExternalEdit(int)));
   QObject::connect(&uiView, SIGNAL(SetCurrentIndex(int)), &audioPlayer, SLOT(SetCurrentIndex(int)));
-  QObject::connect(&uiView, SIGNAL(Play()), &audioPlayer, SIGNAL(Play()));
+  QObject::connect(&uiView, SIGNAL(Play()), &audioPlayer, SLOT(Play()));
   QObject::connect(&uiView, SIGNAL(AnalyzerEnabled(bool)), &audioPlayer, SLOT(SetAnalyzerEnabled(bool)));
 
   // Signals to ui view
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
   audioPlayer.SetPlaylist(arguments, currentTrack);
 
   // Start playback and main event loop
-  emit audioPlayer.Play();
+  audioPlayer.Play();
   int rv = application.exec();
 
   // Save settings

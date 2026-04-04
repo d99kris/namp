@@ -27,6 +27,7 @@ public:
   void StartTrack(const QString& p_Track);
   void Stop();
   bool IsRunning() const;
+  void SetPaused(bool p_Paused);
 
 signals:
   void SpectrumChanged(const QVector<float>& p_Spectrum);
@@ -42,6 +43,7 @@ private:
   static const int kFFTSize = 512;
 
 private:
+  bool m_Paused = false;
   std::function<qint64()> m_PositionGetter;
   QAudioDecoder m_Decoder;
   QTimer m_Timer;

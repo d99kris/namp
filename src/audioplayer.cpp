@@ -30,9 +30,7 @@ AudioPlayer::AudioPlayer(QObject *p_Parent /* = NULL */)
   : QObject(p_Parent)
   , m_MediaPlayer(this)
 {
-  // Signals to media player
-  connect(this, &AudioPlayer::Play, &m_MediaPlayer, &QMediaPlayer::play);
-  connect(this, &AudioPlayer::Stop, &m_MediaPlayer, &QMediaPlayer::stop);
+  // (Play and Stop are now slots, not signals forwarded to QMediaPlayer)
 
   // Signals from media player
   connect(&m_MediaPlayer, &QMediaPlayer::mediaStatusChanged, this, &AudioPlayer::OnMediaStatusChanged);
@@ -171,6 +169,7 @@ void AudioPlayer::SkipBackward()
   m_MediaPlayer.pause();
   m_MediaPlayer.setPosition(qBound(0ll, m_MediaPlayer.position() - 3000, m_MediaPlayer.duration()));
   m_MediaPlayer.play();
+  m_Spectrum->SetPaused(false);
 }
 
 void AudioPlayer::SkipForward()
@@ -178,6 +177,7 @@ void AudioPlayer::SkipForward()
   m_MediaPlayer.pause();
   m_MediaPlayer.setPosition(qBound(0ll, m_MediaPlayer.position() + 3000, m_MediaPlayer.duration()));
   m_MediaPlayer.play();
+  m_Spectrum->SetPaused(false);
 }
 
 void AudioPlayer::SetVolume(int p_VolumePercentage)
@@ -285,6 +285,18 @@ void AudioPlayer::OnErrorOccurred(QMediaPlayer::Error p_Error)
 }
 #endif
 
+void AudioPlayer::Play()
+{
+  m_MediaPlayer.play();
+  m_Spectrum->SetPaused(false);
+}
+
+void AudioPlayer::Stop()
+{
+  m_MediaPlayer.stop();
+  m_Spectrum->SetPaused(false);
+}
+
 void AudioPlayer::Pause()
 {
 #if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
@@ -295,10 +307,12 @@ void AudioPlayer::Pause()
   {
     case QMediaPlayer::PlayingState:
       m_MediaPlayer.pause();
+      m_Spectrum->SetPaused(true);
       break;
 
     case QMediaPlayer::PausedState:
       m_MediaPlayer.play();
+      m_Spectrum->SetPaused(false);
       break;
 
     default:
