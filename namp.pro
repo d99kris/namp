@@ -7,6 +7,7 @@ HEADERS              = src/audioplayer.h                       \
                        src/common.h                            \
                        src/log.h                               \
                        src/scrobbler.h                         \
+                       src/spectrum.h                          \
                        src/uikeyhandler.h                      \
                        src/uiview.h                            \
                        src/util.h                              \
@@ -16,6 +17,7 @@ SOURCES              = src/audioplayer.cpp                     \
                        src/main.cpp                            \
                        src/log.cpp                             \
                        src/scrobbler.cpp                       \
+                       src/spectrum.cpp                        \
                        src/util.cpp
 
 !DEVBUILD {

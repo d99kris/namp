@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include "spectrum.h"
+
 class AudioPlayer : public QObject
 {
   Q_OBJECT
@@ -48,6 +50,7 @@ signals:
   void CurrentIndexChanged(int p_Position);
   void PlaybackModeUpdated(bool p_Shuffle);
   void RefreshTrackData(int p_TrackIndex);
+  void SpectrumChanged(const QVector<float>& p_Spectrum);
 
 public slots:
   void SetPlaybackMode(bool p_Shuffle);
@@ -64,6 +67,7 @@ public slots:
   void Previous();
   void Next();
   void SetCurrentIndex(int);
+  void SetAnalyzerEnabled(bool p_Enabled);
 
 private slots:
   void OnMediaStatusChanged(QMediaPlayer::MediaStatus p_MediaStatus);
@@ -86,6 +90,7 @@ private:
   int m_CurrentIndex = 0;
   QString m_CurrentTrack;
   QList<int> m_CurrentIndexHistory;
+  Spectrum* m_Spectrum = nullptr;
 #if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
   QScopedPointer<QAudioOutput> m_AudioOutput;
   QMediaDevices m_MediaDevices;

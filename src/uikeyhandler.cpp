@@ -1,6 +1,6 @@
 // uikeyhandler.cpp
 //
-// Copyright (C) 2017-2025 Kristofer Berggren
+// Copyright (C) 2017-2026 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -127,6 +127,11 @@ void UIKeyhandler::ProcessKeyEvent()
 
     case '-':
       emit VolumeDown();
+      break;
+
+    case 'a':
+    case 'A':
+      emit ToggleAnalyzer();
       break;
 
     case 's':

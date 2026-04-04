@@ -240,7 +240,30 @@ void UIView::SetViewPosition(const bool& p_ViewPosition)
   m_ViewPosition = p_ViewPosition;
 }
 
+void UIView::GetViewAnalyzer(bool& p_ViewAnalyzer)
+{
+  p_ViewAnalyzer = m_ViewAnalyzer;
+}
+
+void UIView::SetViewAnalyzer(const bool& p_ViewAnalyzer)
+{
+  m_ViewAnalyzer = p_ViewAnalyzer;
+  emit AnalyzerEnabled(m_ViewAnalyzer);
+}
+
 void UIView::RefreshTrackData(int /*p_TrackIndex*/)
+{
+}
+
+void UIView::SpectrumChanged(const QVector<float>& /*p_Spectrum*/)
+{
+}
+
+void UIView::ToggleAnalyzer()
+{
+}
+
+void UIView::DrawSpectrumBars()
 {
 }
 

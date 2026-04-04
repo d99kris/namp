@@ -1,6 +1,6 @@
 // uiview.cpp
 //
-// Copyright (C) 2017-2025 Kristofer Berggren
+// Copyright (C) 2017-2026 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -133,6 +133,16 @@ void UIView::VolumeChanged(int p_Volume)
 {
   m_VolumePercentage = p_Volume;
   Refresh();
+}
+
+void UIView::SpectrumChanged(const QVector<float>& p_Spectrum)
+{
+  m_SpectrumBands = p_Spectrum;
+  if (m_PlayerWindow != NULL && m_ViewAnalyzer)
+  {
+    DrawSpectrumBars();
+    wrefresh(m_PlayerWindow);
+  }
 }
 
 void UIView::PlaybackModeUpdated(bool p_Shuffle)
@@ -350,6 +360,16 @@ void UIView::DrawPlayer()
     std::string fullName = GetPlayerTrackName(m_TitleWidth).toStdString();
     std::wstring trackName = Util::TrimPadWString(Util::ToWString(fullName), m_TitleWidth);
     mvwaddnwstr(m_PlayerWindow, 1, 11, trackName.c_str(), trackName.size());
+
+    // Spectrum analyzer
+    if (m_ViewAnalyzer)
+    {
+      DrawSpectrumBars();
+    }
+    else
+    {
+      mvwprintw(m_PlayerWindow, 2, 2, "        ");
+    }
 
     // Volume
     mvwprintw(m_PlayerWindow, 2, 11, "-%*c+", m_VolumeWidth, ' ');
@@ -643,6 +663,9 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
     // Title
     if ((p_Y == 1) && (p_X >= 11) && (p_X < (m_TitleWidth + 11))) m_ScrollTitle = !m_ScrollTitle;
 
+    // Analyzer
+    if ((p_Y == 2) && (p_X >= 2) && (p_X <= 9)) { m_ViewAnalyzer = !m_ViewAnalyzer; emit AnalyzerEnabled(m_ViewAnalyzer); }
+
     // Volume
     if ((p_Y == 2) && (p_X >= 11) && (p_X < (m_VolumeWidth + 11 + 2))) emit ProcessMouseEvent(UIMouseEvent(UIELEM_VOLUME, 100 * (p_X - 11) / m_VolumeWidth));
 
@@ -815,6 +838,35 @@ void UIView::GetViewPosition(bool& p_ViewPosition)
 void UIView::SetViewPosition(const bool& p_ViewPosition)
 {
   m_ViewPosition = p_ViewPosition;
+}
+
+void UIView::GetViewAnalyzer(bool& p_ViewAnalyzer)
+{
+  p_ViewAnalyzer = m_ViewAnalyzer;
+}
+
+void UIView::SetViewAnalyzer(const bool& p_ViewAnalyzer)
+{
+  m_ViewAnalyzer = p_ViewAnalyzer;
+  emit AnalyzerEnabled(m_ViewAnalyzer);
+}
+
+void UIView::ToggleAnalyzer()
+{
+  m_ViewAnalyzer = !m_ViewAnalyzer;
+  emit AnalyzerEnabled(m_ViewAnalyzer);
+  Refresh();
+}
+
+void UIView::DrawSpectrumBars()
+{
+  static const wchar_t bars[] = L" \u2581\u2582\u2583\u2584\u2585\u2586\u2587";
+  for (int i = 0; i < 8 && i < m_SpectrumBands.size(); ++i)
+  {
+    int level = qBound(0, static_cast<int>(m_SpectrumBands[i] * 7.0f), 7);
+    wchar_t ch = bars[level];
+    mvwaddnwstr(m_PlayerWindow, 2, 2 + i, &ch, 1);
+  }
 }
 
 void UIView::ExternalEdit()

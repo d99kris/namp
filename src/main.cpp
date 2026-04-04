@@ -1,6 +1,6 @@
 // main.cpp
 //
-// Copyright (C) 2017-2025 Kristofer Berggren
+// Copyright (C) 2017-2026 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -163,9 +163,11 @@ int main(int argc, char *argv[])
   QObject::connect(&uiKeyhandler, SIGNAL(SetVolume(int)), &audioPlayer, SLOT(SetVolume(int)));
   QObject::connect(&uiKeyhandler, SIGNAL(SetPosition(int)), &audioPlayer, SLOT(SetPosition(int)));
   QObject::connect(&uiKeyhandler, SIGNAL(ExternalEdit()), &uiView, SLOT(ExternalEdit()));
+  QObject::connect(&uiKeyhandler, SIGNAL(ToggleAnalyzer()), &uiView, SLOT(ToggleAnalyzer()));
   QObject::connect(&uiView, SIGNAL(ExternalEdit(int)), &audioPlayer, SLOT(ExternalEdit(int)));
   QObject::connect(&uiView, SIGNAL(SetCurrentIndex(int)), &audioPlayer, SLOT(SetCurrentIndex(int)));
   QObject::connect(&uiView, SIGNAL(Play()), &audioPlayer, SIGNAL(Play()));
+  QObject::connect(&uiView, SIGNAL(AnalyzerEnabled(bool)), &audioPlayer, SLOT(SetAnalyzerEnabled(bool)));
 
   // Signals to ui view
   QObject::connect(&audioPlayer, SIGNAL(PlaylistUpdated(const QVector<QString>&)), &uiView, SLOT(PlaylistUpdated(const QVector<QString>&)));
@@ -175,6 +177,7 @@ int main(int argc, char *argv[])
   QObject::connect(&audioPlayer, SIGNAL(VolumeChanged(int)), &uiView, SLOT(VolumeChanged(int)));
   QObject::connect(&audioPlayer, SIGNAL(PlaybackModeUpdated(bool)), &uiView, SLOT(PlaybackModeUpdated(bool)));
   QObject::connect(&audioPlayer, SIGNAL(RefreshTrackData(int)), &uiView, SLOT(RefreshTrackData(int)));
+  QObject::connect(&audioPlayer, SIGNAL(SpectrumChanged(const QVector<float>&)), &uiView, SLOT(SpectrumChanged(const QVector<float>&)));
   QObject::connect(&uiKeyhandler, SIGNAL(Search()), &uiView, SLOT(Search()));
   QObject::connect(&uiKeyhandler, SIGNAL(SelectPrevious()), &uiView, SLOT(SelectPrevious()));
   QObject::connect(&uiKeyhandler, SIGNAL(SelectNext()), &uiView, SLOT(SelectNext()));
@@ -203,6 +206,8 @@ int main(int argc, char *argv[])
   uiView.SetScrollTitle(scrollTitle);
   bool viewPosition = settings.value("ui/viewposition", true).toBool();
   uiView.SetViewPosition(viewPosition);
+  bool viewAnalyzer = settings.value("ui/viewanalyzer", false).toBool();
+  uiView.SetViewAnalyzer(viewAnalyzer);
 
   // Set playlist and track
   audioPlayer.SetPlaylist(arguments, currentTrack);
@@ -222,6 +227,8 @@ int main(int argc, char *argv[])
   settings.setValue("ui/scrolltitle", scrollTitle);
   uiView.GetViewPosition(viewPosition);
   settings.setValue("ui/viewposition", viewPosition);
+  uiView.GetViewAnalyzer(viewAnalyzer);
+  settings.setValue("ui/viewanalyzer", viewAnalyzer);
 
   // Cleanup
   if (scrobbler != NULL)

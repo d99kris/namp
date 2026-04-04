@@ -44,6 +44,10 @@ AudioPlayer::AudioPlayer(QObject *p_Parent /* = NULL */)
   connect(&m_MediaPlayer, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this, &AudioPlayer::OnErrorOccurred);
 #endif
 
+  // Spectrum analyzer
+  m_Spectrum = new Spectrum([this]() { return m_MediaPlayer.position(); }, this);
+  connect(m_Spectrum, &Spectrum::SpectrumChanged, this, &AudioPlayer::SpectrumChanged);
+
 #if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
   QAudioDevice audioDevice(QMediaDevices::defaultAudioOutput());
   m_AudioOutput.reset(new QAudioOutput());
@@ -351,6 +355,18 @@ void AudioPlayer::SetCurrentIndex(int p_CurrentIndex)
   OnMediaChanged(true /*p_Forward*/);
 }
 
+void AudioPlayer::SetAnalyzerEnabled(bool p_Enabled)
+{
+  if (p_Enabled)
+  {
+    m_Spectrum->StartTrack(m_CurrentTrack);
+  }
+  else
+  {
+    m_Spectrum->Stop();
+  }
+}
+
 void AudioPlayer::OnMediaChanged(bool p_Forward)
 {
   if (m_PlayListPaths.empty()) return;
@@ -371,6 +387,11 @@ void AudioPlayer::OnMediaChanged(bool p_Forward)
   m_MediaPlayer.setMedia(QUrl::fromLocalFile(m_CurrentTrack));
 #endif
   m_MediaPlayer.play();
+
+  if (m_Spectrum->IsRunning())
+  {
+    m_Spectrum->StartTrack(m_CurrentTrack);
+  }
 
   if (p_Forward)
   {

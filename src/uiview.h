@@ -1,6 +1,6 @@
 // uiview.h
 //
-// Copyright (C) 2017-2025 Kristofer Berggren
+// Copyright (C) 2017-2026 Kristofer Berggren
 // All rights reserved.
 //
 // namp is distributed under the GPLv2 license, see LICENSE for details.
@@ -56,6 +56,8 @@ public:
   void SetScrollTitle(const bool& p_ScrollTitle);
   void GetViewPosition(bool& p_ViewPosition);
   void SetViewPosition(const bool& p_ViewPosition);
+  void GetViewAnalyzer(bool& p_ViewAnalyzer);
+  void SetViewAnalyzer(const bool& p_ViewAnalyzer);
 
 public slots:
   void PlaylistUpdated(const QVector<QString>& p_Paths);
@@ -76,6 +78,8 @@ public slots:
   void KeyPress(int p_Key);
   void MouseEventRequest(int p_X, int p_Y, uint32_t p_Button);
   void RefreshTrackData(int p_TrackIndex);
+  void SpectrumChanged(const QVector<float>& p_Spectrum);
+  void ToggleAnalyzer();
   void ExternalEdit();
 
 private slots:
@@ -87,6 +91,7 @@ signals:
   void ProcessMouseEvent(const UIMouseEvent& p_UIMouseEvent);
   void Play();
   void ExternalEdit(int);
+  void AnalyzerEnabled(bool);
 
 private:
   void SetUIState(UIState p_UIState);
@@ -95,6 +100,7 @@ private:
   void DeleteWindows();
   void CreateWindows();
   void DrawPlayer();
+  void DrawSpectrumBars();
   QString GetPlayerTrackName(int p_MaxLength);
   void DrawPlaylist();
   void LoadTracksData();
@@ -137,6 +143,7 @@ private:
   bool m_Shuffle = true;
   bool m_ScrollTitle = false;
   bool m_ViewPosition = true;
+  bool m_ViewAnalyzer = false;
   UIState m_UIState = UISTATE_PLAYER;
   UIState m_PreviousUIState = UISTATE_PLAYER;
   QString m_SearchString;
@@ -146,5 +153,6 @@ private:
 
   bool m_SetPlaying = false;
   bool m_SetPlayed = false;
+  QVector<float> m_SpectrumBands = QVector<float>(8, 0.0f);
 };
 
