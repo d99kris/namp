@@ -28,6 +28,7 @@ public:
   void Stop();
   bool IsRunning() const;
   void SetPaused(bool p_Paused);
+  void StartDecay();
 
 signals:
   void SpectrumChanged(const QVector<float>& p_Spectrum);
@@ -44,6 +45,7 @@ private:
 
 private:
   bool m_Paused = false;
+  bool m_Decaying = false;
   std::function<qint64()> m_PositionGetter;
   QAudioDecoder m_Decoder;
   QTimer m_Timer;

@@ -289,12 +289,16 @@ void AudioPlayer::Play()
 {
   m_MediaPlayer.play();
   m_Spectrum->SetPaused(false);
+  if (m_Spectrum->IsRunning())
+  {
+    m_Spectrum->StartTrack(m_CurrentTrack);
+  }
 }
 
 void AudioPlayer::Stop()
 {
   m_MediaPlayer.stop();
-  m_Spectrum->SetPaused(false);
+  m_Spectrum->StartDecay();
 }
 
 void AudioPlayer::Pause()

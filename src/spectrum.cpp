@@ -43,6 +43,7 @@ Spectrum::Spectrum(std::function<qint64()> p_PositionGetter, QObject* p_Parent)
 
 void Spectrum::StartTrack(const QString& p_Track)
 {
+  m_Decaying = false;
   m_Decoder.stop();
   m_SpectrumData.clear();
   m_SpectrumIndex = 0;
@@ -79,6 +80,18 @@ void Spectrum::SetPaused(bool p_Paused)
   m_Paused = p_Paused;
 }
 
+void Spectrum::StartDecay()
+{
+  m_Decaying = true;
+  m_Paused = false;
+  m_Decoder.stop();
+  m_SpectrumData.clear();
+  if (!m_Timer.isActive())
+  {
+    m_Timer.start();
+  }
+}
+
 void Spectrum::OnTimer()
 {
   static int timerCount = 0;
@@ -99,6 +112,29 @@ void Spectrum::OnTimer()
   if (m_Decoder.bufferAvailable())
   {
     ProcessDecoderBuffer();
+  }
+
+  if (m_Decaying)
+  {
+    const float decay = 0.94f;
+    bool allZero = true;
+    for (int i = 0; i < 8; ++i)
+    {
+      m_CurrentSpectrum[i] *= decay;
+      if (m_CurrentSpectrum[i] > 0.005f)
+      {
+        allZero = false;
+      }
+    }
+
+    if (allZero)
+    {
+      m_CurrentSpectrum.fill(0.0f);
+      m_Decaying = false;
+    }
+
+    emit SpectrumChanged(m_CurrentSpectrum);
+    return;
   }
 
   if (m_SpectrumData.isEmpty() || m_Paused) return;
