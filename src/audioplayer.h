@@ -48,6 +48,9 @@ signals:
   void PlaybackModeUpdated(bool p_Shuffle);
   void RefreshTrackData(int p_TrackIndex);
   void SpectrumChanged(const QVector<float>& p_Spectrum);
+#ifdef HAS_CDG
+  void TrackChanged(const QString& p_TrackPath);
+#endif
 
 public slots:
   void SetPlaybackMode(bool p_Shuffle);

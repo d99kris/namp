@@ -34,6 +34,19 @@ SOURCES             += dev/uikeyhandler.cpp                    \
                        dev/uiview.cpp
 }
 
+# CDG support (default on, use CONFIG+=NO_CDG to disable)
+!NO_CDG {
+  DEFINES           += HAS_CDG
+  INCLUDEPATH       += $$PWD/ext/cdgdeck
+  HEADERS           += ext/cdgdeck/cdg.h                       \
+                       src/cdgwindow.h
+  SOURCES           += ext/cdgdeck/cdg.cpp                     \
+                       src/cdgwindow.cpp
+  unix:!macx {
+    QT              += widgets
+  }
+}
+
 LIBS                += -lncursesw                              \
                        -ltag
 
@@ -69,4 +82,10 @@ macx: {
   QT                += widgets
 
   QMAKE_INFO_PLIST   = res/InfoNoDock.plist
+
+  !NO_CDG {
+    HEADERS           += src/macdock.h
+    OBJECTIVE_SOURCES += src/macdock.mm
+    LIBS              += -framework Cocoa
+  }
 }

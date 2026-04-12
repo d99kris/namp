@@ -42,6 +42,9 @@ signals:
   void ToggleShuffle();
   void ToggleAnalyzer();
   void ExternalEdit();
+#ifdef HAS_CDG
+  void ToggleCdg();
+#endif
   void Search();
   void SelectPrevious();
   void SelectNext();

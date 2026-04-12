@@ -422,6 +422,9 @@ void AudioPlayer::OnMediaChanged(bool p_Forward)
   }
 
   emit CurrentIndexChanged(m_CurrentIndex);
+#ifdef HAS_CDG
+  emit TrackChanged(m_CurrentTrack);
+#endif
 }
 
 void AudioPlayer::ListFiles(const std::string& p_Path, std::vector<std::string>& p_Files)
@@ -457,7 +460,8 @@ void AudioPlayer::ListFiles(const std::string& p_Path, std::vector<std::string>&
 
 bool AudioPlayer::IsSupportedFileType(const QString& p_Path)
 {
-  if (p_Path.endsWith(".m3u", Qt::CaseInsensitive) ||
+  if (p_Path.endsWith(".cdg", Qt::CaseInsensitive) ||
+      p_Path.endsWith(".m3u", Qt::CaseInsensitive) ||
       p_Path.endsWith(".md", Qt::CaseInsensitive) ||
       p_Path.endsWith(".txt", Qt::CaseInsensitive) ||
       p_Path.endsWith(".zip", Qt::CaseInsensitive))

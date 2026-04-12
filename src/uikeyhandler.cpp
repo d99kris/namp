@@ -144,6 +144,13 @@ void UIKeyhandler::ProcessKeyEvent()
       emit ExternalEdit();
       break;
 
+#ifdef HAS_CDG
+    case 'g':
+    case 'G':
+      emit ToggleCdg();
+      break;
+#endif
+
     case KEY_MOUSE:
       DoMouseEventRequest();
       break;

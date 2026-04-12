@@ -11,7 +11,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#ifdef __APPLE__
+#if defined(HAS_CDG) || defined(__APPLE__)
 #include <QApplication>
 #endif
 #include <QAudioDecoder>
@@ -25,6 +25,9 @@
 #endif
 
 #include "audioplayer.h"
+#ifdef HAS_CDG
+#include "cdgwindow.h"
+#endif
 #include "log.h"
 #include "uikeyhandler.h"
 #include "uiview.h"
@@ -43,8 +46,7 @@ int main(int argc, char *argv[])
   Log::SetPath("/tmp/namp.log");
   Log::SetDebugEnabled(false);
 
-#ifdef __APPLE__
-  // Workaround for OS X not allowing audio playback from QCoreApplication
+#if defined(HAS_CDG) || defined(__APPLE__)
   QApplication application(argc, argv);
 #else
   QCoreApplication application(argc, argv);
@@ -196,6 +198,15 @@ int main(int argc, char *argv[])
   QObject::connect(&uiView, SIGNAL(UIStateUpdated(UIState)), &uiKeyhandler, SLOT(UIStateUpdated(UIState)));
   QObject::connect(&uiView, SIGNAL(ProcessMouseEvent(const UIMouseEvent&)), &uiKeyhandler, SLOT(ProcessMouseEvent(const UIMouseEvent&)));
 
+#ifdef HAS_CDG
+  // Init CDG window
+  CdgWindow cdgWindow;
+  QObject::connect(&audioPlayer, SIGNAL(TrackChanged(const QString&)), &cdgWindow, SLOT(TrackChanged(const QString&)));
+  QObject::connect(&audioPlayer, SIGNAL(PositionChanged(qint64)), &cdgWindow, SLOT(PositionChanged(qint64)));
+  QObject::connect(&uiKeyhandler, SIGNAL(ToggleCdg()), &cdgWindow, SLOT(ToggleCdg()));
+  QObject::connect(&cdgWindow, SIGNAL(KeyReceived()), &uiKeyhandler, SLOT(ProcessKeyEvent()));
+#endif
+
   // Apply settings
   bool shuffle = settings.value("player/shuffle", true).toBool();
   emit audioPlayer.SetPlaybackMode(shuffle);
@@ -281,6 +292,9 @@ static void ShowHelp()
     "   ENTER             play selected track\n"
     "   TAB               toggle main window / playlist focus\n"
     "   e                 external tag editor\n"
+#ifdef HAS_CDG
+    "   g                 toggle CDG graphics window\n"
+#endif
     "   s                 toggle shuffle on/off\n"
     "\n"
     "Config Path Linux:\n"
