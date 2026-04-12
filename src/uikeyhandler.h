@@ -42,8 +42,13 @@ signals:
   void ToggleShuffle();
   void ToggleAnalyzer();
   void ExternalEdit();
-#ifdef HAS_CDG
+#ifdef HAS_GUI
   void ToggleCdg();
+  void ToggleLyrics();
+  void ToggleFullScreen();
+  void LyricsZoomIn();
+  void LyricsZoomOut();
+  void LyricsZoomReset();
 #endif
   void Search();
   void SelectPrevious();

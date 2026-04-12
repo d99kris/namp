@@ -383,16 +383,34 @@ void UIView::DrawPlayer()
     }
 
     // Playback controls
-    char state = ' ';
-    if (m_SetPlayed)
+    int xpos = 2;
+    mvwprintw(m_PlayerWindow, 4, xpos, "|< |> || [] >|  ");
+    xpos += 16;
+
+    // Scrobble indicator (only when scrobbler is configured)
+    if (m_Scrobbler)
     {
-      state = '^';
+      char state = ' ';
+      if (m_SetPlayed)
+        state = '^';
+      else if (m_SetPlaying)
+        state = '_';
+      mvwprintw(m_PlayerWindow, 4, xpos, "%c  ", state);
+      xpos += 3;
     }
-    else if (m_SetPlaying)
+
+    // Shuffle toggle
+    m_ShuffleX = xpos;
+    mvwprintw(m_PlayerWindow, 4, xpos, "[%c] Shuffle", m_Shuffle ? 'X' : ' ');
+    xpos += 11;
+
+    // Lyrics toggle (when available and fits in window, with trailing space margin)
+    m_LyricsX = -1;
+    if (m_LyricsAvailable && (xpos + 14 <= m_PlayerWindowWidth))
     {
-      state = '_';
+      m_LyricsX = xpos + 2;
+      mvwprintw(m_PlayerWindow, 4, xpos, "  [%c] Lyrics", m_LyricsEnabled ? 'X' : ' ');
     }
-    mvwprintw(m_PlayerWindow, 4, 2, "|< |> || [] >|  [%c] Shuffle  %c", m_Shuffle ? 'X' : ' ', state);
 
     // Refresh
     wrefresh(m_PlayerWindow);
@@ -688,7 +706,10 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
     else if ((p_Y == 4) && (p_X >= 14) && (p_X <= 15)) emit ProcessMouseEvent(UIMouseEvent(UIELEM_NEXT, 0));
 
     // Shuffle
-    else if ((p_Y == 4) && (p_X >= 18) && (p_X <= 20)) emit ProcessMouseEvent(UIMouseEvent(UIELEM_SHUFFLE, 0));
+    else if ((p_Y == 4) && (p_X >= m_ShuffleX) && (p_X <= m_ShuffleX + 2)) emit ProcessMouseEvent(UIMouseEvent(UIELEM_SHUFFLE, 0));
+
+    // Lyrics
+    else if ((m_LyricsX >= 0) && (p_Y == 4) && (p_X >= m_LyricsX) && (p_X <= m_LyricsX + 2)) emit ProcessMouseEvent(UIMouseEvent(UIELEM_LYRICS, 0));
 
     // Playlist
     else if ((p_Y > m_PlaylistWindowY) && (p_Y < (m_PlaylistWindowY + m_PlaylistWindowHeight)) &&
@@ -849,6 +870,17 @@ void UIView::SetViewAnalyzer(const bool& p_ViewAnalyzer)
 {
   m_ViewAnalyzer = p_ViewAnalyzer;
   emit AnalyzerEnabled(m_ViewAnalyzer);
+}
+
+void UIView::SetLyricsAvailable(bool p_Available)
+{
+  m_LyricsAvailable = p_Available;
+}
+
+void UIView::LyricsUpdated(bool p_Enabled)
+{
+  m_LyricsEnabled = p_Enabled;
+  Refresh();
 }
 
 void UIView::ToggleAnalyzer()

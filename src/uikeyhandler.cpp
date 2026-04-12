@@ -144,10 +144,32 @@ void UIKeyhandler::ProcessKeyEvent()
       emit ExternalEdit();
       break;
 
-#ifdef HAS_CDG
+#ifdef HAS_GUI
     case 'g':
     case 'G':
       emit ToggleCdg();
+      break;
+
+    case 'l':
+    case 'L':
+      emit ToggleLyrics();
+      break;
+
+    case 'f':
+    case 'F':
+      emit ToggleFullScreen();
+      break;
+
+    case ',':
+      emit LyricsZoomOut();
+      break;
+
+    case '.':
+      emit LyricsZoomIn();
+      break;
+
+    case ';':
+      emit LyricsZoomReset();
       break;
 #endif
 
@@ -209,6 +231,12 @@ void UIKeyhandler::ProcessMouseEvent(const UIMouseEvent& p_UIMouseEvent)
 
     case UIELEM_SHUFFLE:
       emit ToggleShuffle();
+      break;
+
+    case UIELEM_LYRICS:
+#ifdef HAS_GUI
+      emit ToggleLyrics();
+#endif
       break;
 
     case UIELEM_VOLUMEUP:

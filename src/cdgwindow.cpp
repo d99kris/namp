@@ -83,8 +83,11 @@ void CdgWindow::TrackChanged(const QString& p_TrackPath)
 
   Log::Info("Loaded CDG file: %s (%d packets)", cdgPath.toStdString().c_str(), m_PacketCount);
 
-  show();
-  raise();
+  if (m_Enabled)
+  {
+    show();
+    raise();
+  }
 }
 
 void CdgWindow::PositionChanged(qint64 p_PositionMs)
@@ -118,17 +121,40 @@ void CdgWindow::PositionChanged(qint64 p_PositionMs)
   }
 }
 
+void CdgWindow::SetEnabled(bool p_Enabled)
+{
+  m_Enabled = p_Enabled;
+}
+
+void CdgWindow::GetEnabled(bool& p_Enabled)
+{
+  p_Enabled = m_Enabled;
+}
+
 void CdgWindow::ToggleCdg()
 {
   if (!m_HasCdg) return;
 
   if (isVisible())
+  {
+    m_Enabled = false;
     hide();
+  }
   else
   {
+    m_Enabled = true;
     show();
     raise();
   }
+}
+
+void CdgWindow::ToggleFullScreen()
+{
+  if (!isVisible()) return;
+  if (isFullScreen())
+    showNormal();
+  else
+    showFullScreen();
 }
 
 void CdgWindow::RenderFrame()

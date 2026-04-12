@@ -34,14 +34,20 @@ SOURCES             += dev/uikeyhandler.cpp                    \
                        dev/uiview.cpp
 }
 
-# CDG support (default on, use CONFIG+=NO_CDG to disable)
-!NO_CDG {
-  DEFINES           += HAS_CDG
+# GUI support (default on, use CONFIG+=NO_GUI to disable)
+!NO_GUI {
+  DEFINES           += HAS_GUI
   INCLUDEPATH       += $$PWD/ext/cdgdeck
   HEADERS           += ext/cdgdeck/cdg.h                       \
                        src/cdgwindow.h
   SOURCES           += ext/cdgdeck/cdg.cpp                     \
                        src/cdgwindow.cpp
+  HEADERS           += src/lyricsprovider.h                    \
+                       src/lyricswindow.h
+  SOURCES           += src/lyricsprovider.cpp                  \
+                       src/lyricswindow.cpp
+  RESOURCES         += res/namp.qrc
+  QT                += network
   unix:!macx {
     QT              += widgets
   }
@@ -79,11 +85,10 @@ macx: {
 
   DEFINES           += _XOPEN_SOURCE_EXTENDED=1
 
-  QT                += widgets
-
   QMAKE_INFO_PLIST   = res/InfoNoDock.plist
 
-  !NO_CDG {
+  !NO_GUI {
+    QT              += widgets
     HEADERS           += src/macdock.h
     OBJECTIVE_SOURCES += src/macdock.mm
     LIBS              += -framework Cocoa

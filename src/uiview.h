@@ -58,6 +58,7 @@ public:
   void SetViewPosition(const bool& p_ViewPosition);
   void GetViewAnalyzer(bool& p_ViewAnalyzer);
   void SetViewAnalyzer(const bool& p_ViewAnalyzer);
+  void SetLyricsAvailable(bool p_Available);
 
 public slots:
   void PlaylistUpdated(const QVector<QString>& p_Paths);
@@ -80,6 +81,7 @@ public slots:
   void RefreshTrackData(int p_TrackIndex);
   void SpectrumChanged(const QVector<float>& p_Spectrum);
   void ToggleAnalyzer();
+  void LyricsUpdated(bool p_Enabled);
   void ExternalEdit();
 
 private slots:
@@ -140,7 +142,11 @@ private:
   int m_PlaylistSelected = 0;
   int m_PlaylistOffset = 0;
   int m_VolumePercentage = 100;
-  bool m_Shuffle = true;
+  bool m_Shuffle = false;
+  bool m_LyricsEnabled = false;
+  bool m_LyricsAvailable = false;
+  int m_ShuffleX = 18;
+  int m_LyricsX = -1;
   bool m_ScrollTitle = false;
   bool m_ViewPosition = true;
   bool m_ViewAnalyzer = false;

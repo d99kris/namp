@@ -59,6 +59,17 @@ AudioPlayer::~AudioPlayer()
 {
 }
 
+void AudioPlayer::Shutdown()
+{
+  m_Spectrum->Stop();
+  m_MediaPlayer.stop();
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+  m_MediaPlayer.setSource(QUrl());
+#else
+  m_MediaPlayer.setMedia(QMediaContent());
+#endif
+}
+
 void AudioPlayer::SetPlaylist(const QStringList& p_Paths, const QString& p_CurrentTrack)
 {
   foreach (QString const &path, p_Paths)
@@ -135,6 +146,14 @@ void AudioPlayer::ExternalEdit(int p_SelectedIndex)
   if (result)
   {
     emit RefreshTrackData(p_SelectedIndex);
+#ifdef HAS_GUI
+    // If the edited track is currently playing, re-attempt lyrics lookup
+    // since tags (artist/title/album) may have changed.
+    if (p_SelectedIndex == m_CurrentIndex)
+    {
+      emit RefreshLyrics(m_CurrentTrack);
+    }
+#endif
   }
 }
 
@@ -422,7 +441,7 @@ void AudioPlayer::OnMediaChanged(bool p_Forward)
   }
 
   emit CurrentIndexChanged(m_CurrentIndex);
-#ifdef HAS_CDG
+#ifdef HAS_GUI
   emit TrackChanged(m_CurrentTrack);
 #endif
 }
@@ -461,6 +480,7 @@ void AudioPlayer::ListFiles(const std::string& p_Path, std::vector<std::string>&
 bool AudioPlayer::IsSupportedFileType(const QString& p_Path)
 {
   if (p_Path.endsWith(".cdg", Qt::CaseInsensitive) ||
+      p_Path.endsWith(".lrc", Qt::CaseInsensitive) ||
       p_Path.endsWith(".m3u", Qt::CaseInsensitive) ||
       p_Path.endsWith(".md", Qt::CaseInsensitive) ||
       p_Path.endsWith(".txt", Qt::CaseInsensitive) ||

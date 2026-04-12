@@ -20,11 +20,14 @@ class CdgWindow : public QWidget
 
 public:
   CdgWindow(QWidget* p_Parent = nullptr);
+  void SetEnabled(bool p_Enabled);
+  void GetEnabled(bool& p_Enabled);
 
 public slots:
   void TrackChanged(const QString& p_TrackPath);
   void PositionChanged(qint64 p_PositionMs);
   void ToggleCdg();
+  void ToggleFullScreen();
 
 signals:
   void KeyReceived();
@@ -45,4 +48,5 @@ private:
   int m_ProcessedPackets = 0;
   QImage m_Image;
   bool m_HasCdg = false;
+  bool m_Enabled = true;
 };

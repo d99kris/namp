@@ -267,6 +267,14 @@ void UIView::DrawSpectrumBars()
 {
 }
 
+void UIView::SetLyricsAvailable(bool /*p_Available*/)
+{
+}
+
+void UIView::LyricsUpdated(bool /*p_Enabled*/)
+{
+}
+
 void UIView::ExternalEdit()
 {
 }

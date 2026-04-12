@@ -34,6 +34,7 @@ public:
   void GetVolume(int& p_Volume);
   void GetCurrentTrack(QString& p_CurrentTrack);
   bool IsInited();
+  void Shutdown();
 
 signals:
 
@@ -48,8 +49,9 @@ signals:
   void PlaybackModeUpdated(bool p_Shuffle);
   void RefreshTrackData(int p_TrackIndex);
   void SpectrumChanged(const QVector<float>& p_Spectrum);
-#ifdef HAS_CDG
+#ifdef HAS_GUI
   void TrackChanged(const QString& p_TrackPath);
+  void RefreshLyrics(const QString& p_TrackPath);
 #endif
 
 public slots:

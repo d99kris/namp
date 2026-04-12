@@ -11,8 +11,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#if defined(HAS_CDG) || defined(__APPLE__)
+#ifdef HAS_GUI
 #include <QApplication>
+#include <QFile>
+#include <QIcon>
+#include <QPixmap>
 #endif
 #include <QAudioDecoder>
 #include <QCoreApplication>
@@ -25,8 +28,13 @@
 #endif
 
 #include "audioplayer.h"
-#ifdef HAS_CDG
+#ifdef HAS_GUI
 #include "cdgwindow.h"
+#include "lyricsprovider.h"
+#include "lyricswindow.h"
+#ifdef __APPLE__
+#include "macdock.h"
+#endif
 #endif
 #include "log.h"
 #include "uikeyhandler.h"
@@ -46,8 +54,23 @@ int main(int argc, char *argv[])
   Log::SetPath("/tmp/namp.log");
   Log::SetDebugEnabled(false);
 
-#if defined(HAS_CDG) || defined(__APPLE__)
+#ifdef HAS_GUI
   QApplication application(argc, argv);
+  {
+    QFile iconFile(":/namp.png");
+    if (iconFile.open(QIODevice::ReadOnly))
+    {
+      QByteArray iconData = iconFile.readAll();
+      iconFile.close();
+      QPixmap iconPixmap;
+      iconPixmap.loadFromData(iconData);
+      QApplication::setWindowIcon(QIcon(iconPixmap));
+#ifdef __APPLE__
+      SetDockIcon(iconData.constData(), static_cast<size_t>(iconData.size()));
+#endif
+    }
+  }
+  qRegisterMetaType<LyricsData>("LyricsData");
 #else
   QCoreApplication application(argc, argv);
 #endif
@@ -198,17 +221,38 @@ int main(int argc, char *argv[])
   QObject::connect(&uiView, SIGNAL(UIStateUpdated(UIState)), &uiKeyhandler, SLOT(UIStateUpdated(UIState)));
   QObject::connect(&uiView, SIGNAL(ProcessMouseEvent(const UIMouseEvent&)), &uiKeyhandler, SLOT(ProcessMouseEvent(const UIMouseEvent&)));
 
-#ifdef HAS_CDG
+#ifdef HAS_GUI
   // Init CDG window
   CdgWindow cdgWindow;
   QObject::connect(&audioPlayer, SIGNAL(TrackChanged(const QString&)), &cdgWindow, SLOT(TrackChanged(const QString&)));
   QObject::connect(&audioPlayer, SIGNAL(PositionChanged(qint64)), &cdgWindow, SLOT(PositionChanged(qint64)));
   QObject::connect(&uiKeyhandler, SIGNAL(ToggleCdg()), &cdgWindow, SLOT(ToggleCdg()));
+  QObject::connect(&uiKeyhandler, SIGNAL(ToggleFullScreen()), &cdgWindow, SLOT(ToggleFullScreen()));
   QObject::connect(&cdgWindow, SIGNAL(KeyReceived()), &uiKeyhandler, SLOT(ProcessKeyEvent()));
+
+  // Init lyrics
+  LyricsProvider lyricsProvider(&application);
+  LyricsWindow lyricsWindow;
+  QObject::connect(&audioPlayer, SIGNAL(TrackChanged(const QString&)), &lyricsProvider, SLOT(TrackChanged(const QString&)));
+  QObject::connect(&audioPlayer, SIGNAL(RefreshLyrics(const QString&)), &lyricsProvider, SLOT(TrackChanged(const QString&)));
+  QObject::connect(&lyricsProvider, SIGNAL(LyricsReady(const LyricsData&)), &lyricsWindow, SLOT(SetLyrics(const LyricsData&)));
+  QObject::connect(&lyricsProvider, SIGNAL(LyricsCleared()), &lyricsWindow, SLOT(ClearLyrics()));
+  QObject::connect(&lyricsProvider, SIGNAL(LyricsLoading()), &lyricsWindow, SLOT(LyricsLoading()));
+  QObject::connect(&lyricsWindow, SIGNAL(EnabledChanged(bool)), &lyricsProvider, SLOT(SetEnabled(bool)));
+  QObject::connect(&lyricsWindow, SIGNAL(EnabledChanged(bool)), &uiView, SLOT(LyricsUpdated(bool)));
+  uiView.SetLyricsAvailable(true);
+  QObject::connect(&audioPlayer, SIGNAL(PositionChanged(qint64)), &lyricsWindow, SLOT(PositionChanged(qint64)));
+  QObject::connect(&audioPlayer, SIGNAL(DurationChanged(qint64)), &lyricsWindow, SLOT(DurationChanged(qint64)));
+  QObject::connect(&uiKeyhandler, SIGNAL(ToggleLyrics()), &lyricsWindow, SLOT(ToggleLyrics()));
+  QObject::connect(&uiKeyhandler, SIGNAL(ToggleFullScreen()), &lyricsWindow, SLOT(ToggleFullScreen()));
+  QObject::connect(&uiKeyhandler, SIGNAL(LyricsZoomIn()), &lyricsWindow, SLOT(ZoomIn()));
+  QObject::connect(&uiKeyhandler, SIGNAL(LyricsZoomOut()), &lyricsWindow, SLOT(ZoomOut()));
+  QObject::connect(&uiKeyhandler, SIGNAL(LyricsZoomReset()), &lyricsWindow, SLOT(ZoomReset()));
+  QObject::connect(&lyricsWindow, SIGNAL(KeyReceived()), &uiKeyhandler, SLOT(ProcessKeyEvent()));
 #endif
 
   // Apply settings
-  bool shuffle = settings.value("player/shuffle", true).toBool();
+  bool shuffle = settings.value("player/shuffle", false).toBool();
   emit audioPlayer.SetPlaybackMode(shuffle);
   int volume = settings.value("player/volume", 100).toInt();
   emit audioPlayer.SetVolume(volume);
@@ -219,6 +263,21 @@ int main(int argc, char *argv[])
   uiView.SetViewPosition(viewPosition);
   bool viewAnalyzer = settings.value("ui/viewanalyzer", false).toBool();
   uiView.SetViewAnalyzer(viewAnalyzer);
+#ifdef HAS_GUI
+  bool viewCdg = settings.value("ui/viewcdg", true).toBool();
+  cdgWindow.SetEnabled(viewCdg);
+  bool viewLyrics = settings.value("ui/viewlyrics", false).toBool();
+  lyricsWindow.SetEnabled(viewLyrics);
+  lyricsProvider.SetEnabled(viewLyrics);
+  float lyricsZoom = settings.value("ui/lyricszoom", static_cast<double>(lyricsWindow.GetDefaultFontScale())).toFloat();
+  lyricsWindow.SetFontScale(lyricsZoom);
+  QByteArray cdgGeometry = settings.value("ui/cdggeometry").toByteArray();
+  if (!cdgGeometry.isEmpty())
+    cdgWindow.restoreGeometry(cdgGeometry);
+  QByteArray lyricsGeometry = settings.value("ui/lyricsgeometry").toByteArray();
+  if (!lyricsGeometry.isEmpty())
+    lyricsWindow.restoreGeometry(lyricsGeometry);
+#endif
 
   // Set playlist and track
   audioPlayer.SetPlaylist(arguments, currentTrack);
@@ -226,6 +285,10 @@ int main(int argc, char *argv[])
   // Start playback and main event loop
   audioPlayer.Play();
   int rv = application.exec();
+
+  // Stop audio backend cleanly before settings save / teardown
+  audioPlayer.Shutdown();
+  QCoreApplication::processEvents();
 
   // Save settings
   audioPlayer.GetPlaybackMode(shuffle);
@@ -240,6 +303,16 @@ int main(int argc, char *argv[])
   settings.setValue("ui/viewposition", viewPosition);
   uiView.GetViewAnalyzer(viewAnalyzer);
   settings.setValue("ui/viewanalyzer", viewAnalyzer);
+#ifdef HAS_GUI
+  cdgWindow.GetEnabled(viewCdg);
+  settings.setValue("ui/viewcdg", viewCdg);
+  lyricsWindow.GetEnabled(viewLyrics);
+  settings.setValue("ui/viewlyrics", viewLyrics);
+  lyricsWindow.GetFontScale(lyricsZoom);
+  settings.setValue("ui/lyricszoom", lyricsZoom);
+  settings.setValue("ui/cdggeometry", cdgWindow.saveGeometry());
+  settings.setValue("ui/lyricsgeometry", lyricsWindow.saveGeometry());
+#endif
 
   // Cleanup
   if (scrobbler != NULL)
@@ -292,8 +365,13 @@ static void ShowHelp()
     "   ENTER             play selected track\n"
     "   TAB               toggle main window / playlist focus\n"
     "   e                 external tag editor\n"
-#ifdef HAS_CDG
+#ifdef HAS_GUI
     "   g                 toggle CDG graphics window\n"
+    "   l                 toggle lyrics window\n"
+    "   f                 toggle fullscreen (lyrics/cdg)\n"
+    "   ,                 lyrics font smaller\n"
+    "   .                 lyrics font larger\n"
+    "   ;                 lyrics font reset\n"
 #endif
     "   s                 toggle shuffle on/off\n"
     "\n"
