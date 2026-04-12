@@ -189,6 +189,7 @@ int main(int argc, char *argv[])
   QObject::connect(&uiKeyhandler, SIGNAL(SetPosition(int)), &audioPlayer, SLOT(SetPosition(int)));
   QObject::connect(&uiKeyhandler, SIGNAL(ExternalEdit()), &uiView, SLOT(ExternalEdit()));
   QObject::connect(&uiKeyhandler, SIGNAL(ToggleAnalyzer()), &uiView, SLOT(ToggleAnalyzer()));
+  QObject::connect(&uiKeyhandler, SIGNAL(ToggleFolders()), &uiView, SLOT(ToggleFolders()));
   QObject::connect(&uiView, SIGNAL(ExternalEdit(int)), &audioPlayer, SLOT(ExternalEdit(int)));
   QObject::connect(&uiView, SIGNAL(SetCurrentIndex(int)), &audioPlayer, SLOT(SetCurrentIndex(int)));
   QObject::connect(&uiView, SIGNAL(Play()), &audioPlayer, SLOT(Play()));
@@ -263,6 +264,8 @@ int main(int argc, char *argv[])
   uiView.SetViewPosition(viewPosition);
   bool viewAnalyzer = settings.value("ui/viewanalyzer", false).toBool();
   uiView.SetViewAnalyzer(viewAnalyzer);
+  bool viewFolders = settings.value("ui/viewfolders", false).toBool();
+  uiView.SetViewFolders(viewFolders);
 #ifdef HAS_GUI
   bool viewCdg = settings.value("ui/viewcdg", true).toBool();
   cdgWindow.SetEnabled(viewCdg);
@@ -303,6 +306,8 @@ int main(int argc, char *argv[])
   settings.setValue("ui/viewposition", viewPosition);
   uiView.GetViewAnalyzer(viewAnalyzer);
   settings.setValue("ui/viewanalyzer", viewAnalyzer);
+  uiView.GetViewFolders(viewFolders);
+  settings.setValue("ui/viewfolders", viewFolders);
 #ifdef HAS_GUI
   cdgWindow.GetEnabled(viewCdg);
   settings.setValue("ui/viewcdg", viewCdg);
@@ -373,6 +378,7 @@ static void ShowHelp()
     "   .                 lyrics font larger\n"
     "   ;                 lyrics font reset\n"
 #endif
+    "   d                 toggle folder separators\n"
     "   s                 toggle shuffle on/off\n"
     "\n"
     "Config Path Linux:\n"

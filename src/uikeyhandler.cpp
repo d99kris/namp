@@ -139,6 +139,11 @@ void UIKeyhandler::ProcessKeyEvent()
       emit ToggleShuffle();
       break;
 
+    case 'd':
+    case 'D':
+      emit ToggleFolders();
+      break;
+
     case 'e':
     case 'E':
       emit ExternalEdit();
