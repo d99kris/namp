@@ -112,6 +112,7 @@ private:
   void SetPlaylistSelected(int p_SelectedTrack, bool p_UpdateOffset);
   bool NeedsSeparatorBefore(int p_PlaylistIndex) const;
   QString GetFolderDisplayName(int p_PlaylistIndex) const;
+  void UpdateCommonAncestorPath();
   int ScreenRowToTrackIndex(int p_ScreenRow) const;
 
 private:
@@ -157,6 +158,7 @@ private:
   bool m_ViewPosition = true;
   bool m_ViewAnalyzer = false;
   bool m_ViewFolders = false;
+  QString m_CommonAncestorPath;
   UIState m_UIState = UISTATE_PLAYER;
   UIState m_PreviousUIState = UISTATE_PLAYER;
   QString m_SearchString;

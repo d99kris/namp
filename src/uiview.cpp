@@ -80,6 +80,7 @@ void UIView::PlaylistUpdated(const QVector<QString>& p_Paths)
   {
     m_Playlist.push_back(TrackInfo(trackPath, QFileInfo(trackPath).completeBaseName(), false, 0, index++));
   }
+  UpdateCommonAncestorPath();
   m_PlaylistLoaded = false;
   Refresh();
 }
@@ -955,7 +956,35 @@ bool UIView::NeedsSeparatorBefore(int p_PlaylistIndex) const
 QString UIView::GetFolderDisplayName(int p_PlaylistIndex) const
 {
   QString dirPath = QFileInfo(m_Playlist.at(p_PlaylistIndex).path).path();
+  if (!m_CommonAncestorPath.isEmpty() && dirPath.startsWith(m_CommonAncestorPath))
+  {
+    QString relative = dirPath.mid(m_CommonAncestorPath.length());
+    if (relative.startsWith('/')) relative = relative.mid(1);
+    if (!relative.isEmpty()) return relative;
+  }
   return QFileInfo(dirPath).fileName();
+}
+
+void UIView::UpdateCommonAncestorPath()
+{
+  if (m_Playlist.isEmpty())
+  {
+    m_CommonAncestorPath.clear();
+    return;
+  }
+
+  QStringList commonParts = QFileInfo(m_Playlist.at(0).path).path().split('/');
+  for (int i = 1; i < m_Playlist.count(); ++i)
+  {
+    QStringList parts = QFileInfo(m_Playlist.at(i).path).path().split('/');
+    int minLen = qMin(commonParts.size(), parts.size());
+    int match = 0;
+    while (match < minLen && commonParts.at(match) == parts.at(match))
+      ++match;
+    commonParts = commonParts.mid(0, match);
+  }
+
+  m_CommonAncestorPath = commonParts.join('/');
 }
 
 int UIView::ScreenRowToTrackIndex(int p_ScreenRow) const
