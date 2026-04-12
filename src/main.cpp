@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 
   // Check dependencies
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  const bool isMp3DecodeSupported = QMediaFormat(QMediaFormat::MP3).isSupported(QMediaFormat::Decode);
+  const bool isMp3DecodeSupported = QMediaFormat().supportedAudioCodecs(QMediaFormat::Decode).contains(QMediaFormat::AudioCodec::MP3);
 #else
   const bool isMp3DecodeSupported = QAudioDecoder::hasSupport("audio/mpeg");
 #endif
