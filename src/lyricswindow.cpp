@@ -120,7 +120,6 @@ void LyricsWindow::SetLyrics(const LyricsData& p_Lyrics)
   if (m_HasLyrics && m_Enabled)
   {
     show();
-    raise();
   }
 
   if (m_HasLyrics && !m_Lyrics.synced)

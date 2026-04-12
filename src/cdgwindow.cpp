@@ -86,7 +86,6 @@ void CdgWindow::TrackChanged(const QString& p_TrackPath)
   if (m_Enabled)
   {
     show();
-    raise();
   }
 }
 
