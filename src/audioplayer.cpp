@@ -151,18 +151,38 @@ void AudioPlayer::ToggleShuffle()
 
 void AudioPlayer::ExternalEdit(int p_SelectedIndex)
 {
-  m_MediaPlayer.pause();
+  const bool editingCurrent = (p_SelectedIndex == m_CurrentIndex);
+  if (editingCurrent)
+  {
+    // Release the file handle so idntag can safely rewrite it, and so the
+    // decoder is not reading shifted byte offsets while tags are in flux.
+    m_MediaPlayer.stop();
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+    m_MediaPlayer.setSource(QUrl());
+#else
+    m_MediaPlayer.setMedia(QMediaContent());
+#endif
+  }
+
   QString selectedTrackPath = m_PlayListPaths.at(p_SelectedIndex);
   QString cmd = "idntag --edit --report \"\" \"" + selectedTrackPath + "\"";
   bool result = Util::RunProgram(cmd.toStdString());
-  m_MediaPlayer.play();
+
+  if (editingCurrent)
+  {
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+    m_MediaPlayer.setSource(QUrl::fromLocalFile(selectedTrackPath));
+#else
+    m_MediaPlayer.setMedia(QUrl::fromLocalFile(selectedTrackPath));
+#endif
+    m_MediaPlayer.play();
+  }
+
   if (result)
   {
     emit RefreshTrackData(p_SelectedIndex);
 #ifdef HAS_GUI
-    // If the edited track is currently playing, re-attempt lyrics lookup
-    // since tags (artist/title/album) may have changed.
-    if (p_SelectedIndex == m_CurrentIndex)
+    if (editingCurrent)
     {
       emit RefreshLyrics(m_CurrentTrack);
     }
