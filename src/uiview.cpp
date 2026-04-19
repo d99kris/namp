@@ -80,6 +80,7 @@ void UIView::PlaylistUpdated(const QVector<QString>& p_Paths)
   {
     m_Playlist.push_back(TrackInfo(trackPath, QFileInfo(trackPath).completeBaseName(), false, 0, index++));
   }
+  UpdateCommonAncestorPath();
   m_PlaylistLoaded = false;
   Refresh();
 }
@@ -582,18 +583,45 @@ void UIView::DrawPlaylist()
 
       // Track list
       const int viewMax = m_PlaylistWindowHeight - 2;
-      const int viewCount = qBound(0, m_Playlist.count(), viewMax);
-      for (int i = 0; i < viewCount; ++i)
+      const int viewLength = m_PlaylistWindowWidth - 4;
+      int row = 0;
+      int trackIndex = m_PlaylistOffset;
+      while (row < viewMax && trackIndex < m_Playlist.count())
       {
-        const int playlistIndex = i + m_PlaylistOffset;
-        const int viewLength = m_PlaylistWindowWidth - 4;
-        std::string fullName = m_Playlist.at(playlistIndex).name.toStdString();
+        if (NeedsSeparatorBefore(trackIndex))
+        {
+          QString folderName = GetFolderDisplayName(trackIndex);
+          int nameLen = folderName.length();
+          int padTotal = viewLength - nameLen - 2;
+          int padLeft = qMax(1, padTotal / 2);
+          int padRight = qMax(1, padTotal - padLeft);
+          QString sepLine = QString("=").repeated(padLeft) + " " + folderName + " " + QString("=").repeated(padRight);
+          std::wstring sepWStr = Util::TrimPadWString(Util::ToWString(sepLine.toStdString()), viewLength);
+          wattron(m_PlaylistWindow, A_DIM);
+          std::wstring spaces(viewLength, L' ');
+          mvwaddnwstr(m_PlaylistWindow, row + 1, 2, spaces.c_str(), spaces.size());
+          mvwaddnwstr(m_PlaylistWindow, row + 1, 2, sepWStr.c_str(), sepWStr.size());
+          wattroff(m_PlaylistWindow, A_DIM);
+          ++row;
+          if (row >= viewMax) break;
+        }
+
+        std::string fullName = m_Playlist.at(trackIndex).name.toStdString();
         std::wstring trackName = Util::TrimPadWString(Util::ToWString(fullName), viewLength);
-        wattron(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
+        wattron(m_PlaylistWindow, (trackIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
         std::wstring spaces(viewLength, L' ');
-        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, spaces.c_str(), spaces.size());
-        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName.c_str(), trackName.size());
-        wattroff(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
+        mvwaddnwstr(m_PlaylistWindow, row + 1, 2, spaces.c_str(), spaces.size());
+        mvwaddnwstr(m_PlaylistWindow, row + 1, 2, trackName.c_str(), trackName.size());
+        wattroff(m_PlaylistWindow, (trackIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
+        ++row;
+        ++trackIndex;
+      }
+
+      // Clear remaining rows
+      for (int i = row; i < viewMax; ++i)
+      {
+        std::wstring clearStr = Util::TrimPadWString(L"", viewLength);
+        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, clearStr.c_str(), viewLength);
       }
     }
     else
@@ -715,8 +743,12 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
     else if ((p_Y > m_PlaylistWindowY) && (p_Y < (m_PlaylistWindowY + m_PlaylistWindowHeight)) &&
              (p_X > (m_PlaylistWindowX + 1)) && (p_X < (m_PlaylistWindowX + m_PlaylistWindowWidth - 1)))
     {
-      SetPlaylistSelected((m_PlaylistOffset + p_Y - m_PlaylistWindowY - 1), false);
-      Refresh();
+      int clickedIndex = ScreenRowToTrackIndex(p_Y - m_PlaylistWindowY - 1);
+      if (clickedIndex >= 0)
+      {
+        SetPlaylistSelected(clickedIndex, false);
+        Refresh();
+      }
     }
   }
 
@@ -727,10 +759,14 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
     if ((p_Y > m_PlaylistWindowY) && (p_Y < (m_PlaylistWindowY + m_PlaylistWindowHeight)) &&
         (p_X > (m_PlaylistWindowX + 1)) && (p_X < (m_PlaylistWindowX + m_PlaylistWindowWidth - 1)))
     {
-      SetPlaylistSelected((m_PlaylistOffset + p_Y - m_PlaylistWindowY - 1), false);
-      Refresh();
-      emit SetCurrentIndex(m_PlaylistSelected);
-      emit Play();
+      int clickedIndex = ScreenRowToTrackIndex(p_Y - m_PlaylistWindowY - 1);
+      if (clickedIndex >= 0)
+      {
+        SetPlaylistSelected(clickedIndex, false);
+        Refresh();
+        emit SetCurrentIndex(m_PlaylistSelected);
+        emit Play();
+      }
     }
   }
 
@@ -832,7 +868,26 @@ void UIView::SetPlaylistSelected(int p_SelectedTrack, bool p_UpdateOffset)
     const int viewMax = m_PlaylistWindowHeight - 2;
     if (m_UIState & (UISTATE_PLAYER | UISTATE_PLAYLIST))
     {
-      m_PlaylistOffset = qBound(0, (m_PlaylistSelected - ((viewMax - 1) / 2)), qMax(0, m_Playlist.count() - viewMax));
+      if (m_ViewFolders)
+      {
+        // Walk backward from selected track, counting both track rows and
+        // separator rows, to find the offset that centers it in the viewport.
+        int targetRow = (viewMax - 1) / 2;
+        int offset = m_PlaylistSelected;
+        int rowsAbove = 0;
+        while (offset > 0 && rowsAbove < targetRow)
+        {
+          if (NeedsSeparatorBefore(offset))
+            ++rowsAbove;
+          --offset;
+          ++rowsAbove;
+        }
+        m_PlaylistOffset = qMax(0, offset);
+      }
+      else
+      {
+        m_PlaylistOffset = qBound(0, (m_PlaylistSelected - ((viewMax - 1) / 2)), qMax(0, m_Playlist.count() - viewMax));
+      }
     }
     else
     {
@@ -870,6 +925,84 @@ void UIView::SetViewAnalyzer(const bool& p_ViewAnalyzer)
 {
   m_ViewAnalyzer = p_ViewAnalyzer;
   emit AnalyzerEnabled(m_ViewAnalyzer);
+}
+
+void UIView::GetViewFolders(bool& p_ViewFolders)
+{
+  p_ViewFolders = m_ViewFolders;
+}
+
+void UIView::SetViewFolders(const bool& p_ViewFolders)
+{
+  m_ViewFolders = p_ViewFolders;
+}
+
+void UIView::ToggleFolders()
+{
+  m_ViewFolders = !m_ViewFolders;
+  Refresh();
+}
+
+bool UIView::NeedsSeparatorBefore(int p_PlaylistIndex) const
+{
+  if (!m_ViewFolders) return false;
+  if (p_PlaylistIndex < 0 || p_PlaylistIndex >= m_Playlist.count()) return false;
+  if (p_PlaylistIndex == 0) return true;
+  QString thisDir = QFileInfo(m_Playlist.at(p_PlaylistIndex).path).path();
+  QString prevDir = QFileInfo(m_Playlist.at(p_PlaylistIndex - 1).path).path();
+  return (thisDir != prevDir);
+}
+
+QString UIView::GetFolderDisplayName(int p_PlaylistIndex) const
+{
+  QString dirPath = QFileInfo(m_Playlist.at(p_PlaylistIndex).path).path();
+  if (!m_CommonAncestorPath.isEmpty() && dirPath.startsWith(m_CommonAncestorPath))
+  {
+    QString relative = dirPath.mid(m_CommonAncestorPath.length());
+    if (relative.startsWith('/')) relative = relative.mid(1);
+    if (!relative.isEmpty()) return relative;
+  }
+  return QFileInfo(dirPath).fileName();
+}
+
+void UIView::UpdateCommonAncestorPath()
+{
+  if (m_Playlist.isEmpty())
+  {
+    m_CommonAncestorPath.clear();
+    return;
+  }
+
+  QStringList commonParts = QFileInfo(m_Playlist.at(0).path).path().split('/');
+  for (int i = 1; i < m_Playlist.count(); ++i)
+  {
+    QStringList parts = QFileInfo(m_Playlist.at(i).path).path().split('/');
+    int minLen = qMin(commonParts.size(), parts.size());
+    int match = 0;
+    while (match < minLen && commonParts.at(match) == parts.at(match))
+      ++match;
+    commonParts = commonParts.mid(0, match);
+  }
+
+  m_CommonAncestorPath = commonParts.join('/');
+}
+
+int UIView::ScreenRowToTrackIndex(int p_ScreenRow) const
+{
+  int row = 0;
+  int trackIndex = m_PlaylistOffset;
+  while (trackIndex < m_Playlist.count() && row <= p_ScreenRow)
+  {
+    if (NeedsSeparatorBefore(trackIndex))
+    {
+      if (row == p_ScreenRow) return -1;
+      ++row;
+    }
+    if (row == p_ScreenRow) return trackIndex;
+    ++row;
+    ++trackIndex;
+  }
+  return -1;
 }
 
 void UIView::SetLyricsAvailable(bool p_Available)

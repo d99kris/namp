@@ -41,6 +41,7 @@ signals:
   void SkipForward();
   void ToggleShuffle();
   void ToggleAnalyzer();
+  void ToggleFolders();
   void ExternalEdit();
 #ifdef HAS_GUI
   void ToggleCdg();

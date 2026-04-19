@@ -263,6 +263,35 @@ void UIView::ToggleAnalyzer()
 {
 }
 
+void UIView::ToggleFolders()
+{
+}
+
+void UIView::GetViewFolders(bool& p_ViewFolders)
+{
+  p_ViewFolders = m_ViewFolders;
+}
+
+void UIView::SetViewFolders(const bool& p_ViewFolders)
+{
+  m_ViewFolders = p_ViewFolders;
+}
+
+bool UIView::NeedsSeparatorBefore(int /*p_PlaylistIndex*/) const
+{
+  return false;
+}
+
+QString UIView::GetFolderDisplayName(int /*p_PlaylistIndex*/) const
+{
+  return QString();
+}
+
+int UIView::ScreenRowToTrackIndex(int p_ScreenRow) const
+{
+  return m_PlaylistOffset + p_ScreenRow;
+}
+
 void UIView::DrawSpectrumBars()
 {
 }
