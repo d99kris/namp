@@ -369,17 +369,19 @@ static void ShowHelp()
     "   pgdn              playlist next page\n"
     "   ENTER             play selected track\n"
     "   TAB               toggle main window / playlist focus\n"
+    "   d                 toggle show folder names\n"
     "   e                 external tag editor\n"
 #ifdef HAS_GUI
+    "   f                 toggle fullscreen (lyrics/cdg)\n"
     "   g                 toggle CDG graphics window\n"
     "   l                 toggle lyrics window\n"
-    "   f                 toggle fullscreen (lyrics/cdg)\n"
+#endif
+    "   s                 toggle shuffle on/off\n"
+#ifdef HAS_GUI
     "   ,                 lyrics font smaller\n"
     "   .                 lyrics font larger\n"
     "   ;                 lyrics font reset\n"
 #endif
-    "   d                 toggle folder separators\n"
-    "   s                 toggle shuffle on/off\n"
     "\n"
     "Config Path Linux:\n"
     "   ~/.config/nope/namp.conf\n"

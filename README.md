@@ -50,8 +50,15 @@ Interactive Commands:
     pgdn              playlist next page
     ENTER             play selected track
     TAB               toggle main window / playlist focus
+    d                 toggle show folder names
     e                 external tag editor
+    f                 toggle fullscreen (lyrics/cdg)
+    g                 toggle CDG graphics window
+    l                 toggle lyrics window
     s                 toggle shuffle on/off
+    ,                 lyrics font smaller
+    .                 lyrics font larger
+    ;                 lyrics font reset
 
 Supported Platforms
 ===================
