@@ -58,6 +58,8 @@ public:
   void SetViewPosition(const bool& p_ViewPosition);
   void GetViewAnalyzer(bool& p_ViewAnalyzer);
   void SetViewAnalyzer(const bool& p_ViewAnalyzer);
+  void GetViewFolders(bool& p_ViewFolders);
+  void SetViewFolders(const bool& p_ViewFolders);
   void SetLyricsAvailable(bool p_Available);
 
 public slots:
@@ -81,6 +83,7 @@ public slots:
   void RefreshTrackData(int p_TrackIndex);
   void SpectrumChanged(const QVector<float>& p_Spectrum);
   void ToggleAnalyzer();
+  void ToggleFolders();
   void LyricsUpdated(bool p_Enabled);
   void ExternalEdit();
 
@@ -107,6 +110,11 @@ private:
   void DrawPlaylist();
   void LoadTracksData();
   void SetPlaylistSelected(int p_SelectedTrack, bool p_UpdateOffset);
+  bool NeedsSeparatorBefore(int p_PlaylistIndex) const;
+  QString GetFolderDisplayName(int p_PlaylistIndex) const;
+  void UpdateCommonAncestorPath();
+  int ScreenRowToTrackIndex(int p_ScreenRow) const;
+  int VisibleTrackCount() const;
 
 private:
   Scrobbler* m_Scrobbler = nullptr;
@@ -150,6 +158,8 @@ private:
   bool m_ScrollTitle = false;
   bool m_ViewPosition = true;
   bool m_ViewAnalyzer = false;
+  bool m_ViewFolders = false;
+  QString m_CommonAncestorPath;
   UIState m_UIState = UISTATE_PLAYER;
   UIState m_PreviousUIState = UISTATE_PLAYER;
   QString m_SearchString;

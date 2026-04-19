@@ -189,6 +189,7 @@ int main(int argc, char *argv[])
   QObject::connect(&uiKeyhandler, SIGNAL(SetPosition(int)), &audioPlayer, SLOT(SetPosition(int)));
   QObject::connect(&uiKeyhandler, SIGNAL(ExternalEdit()), &uiView, SLOT(ExternalEdit()));
   QObject::connect(&uiKeyhandler, SIGNAL(ToggleAnalyzer()), &uiView, SLOT(ToggleAnalyzer()));
+  QObject::connect(&uiKeyhandler, SIGNAL(ToggleFolders()), &uiView, SLOT(ToggleFolders()));
   QObject::connect(&uiView, SIGNAL(ExternalEdit(int)), &audioPlayer, SLOT(ExternalEdit(int)));
   QObject::connect(&uiView, SIGNAL(SetCurrentIndex(int)), &audioPlayer, SLOT(SetCurrentIndex(int)));
   QObject::connect(&uiView, SIGNAL(Play()), &audioPlayer, SLOT(Play()));
@@ -263,6 +264,8 @@ int main(int argc, char *argv[])
   uiView.SetViewPosition(viewPosition);
   bool viewAnalyzer = settings.value("ui/viewanalyzer", false).toBool();
   uiView.SetViewAnalyzer(viewAnalyzer);
+  bool viewFolders = settings.value("ui/viewfolders", false).toBool();
+  uiView.SetViewFolders(viewFolders);
 #ifdef HAS_GUI
   bool viewCdg = settings.value("ui/viewcdg", true).toBool();
   cdgWindow.SetEnabled(viewCdg);
@@ -303,6 +306,8 @@ int main(int argc, char *argv[])
   settings.setValue("ui/viewposition", viewPosition);
   uiView.GetViewAnalyzer(viewAnalyzer);
   settings.setValue("ui/viewanalyzer", viewAnalyzer);
+  uiView.GetViewFolders(viewFolders);
+  settings.setValue("ui/viewfolders", viewFolders);
 #ifdef HAS_GUI
   cdgWindow.GetEnabled(viewCdg);
   settings.setValue("ui/viewcdg", viewCdg);
@@ -364,16 +369,19 @@ static void ShowHelp()
     "   pgdn              playlist next page\n"
     "   ENTER             play selected track\n"
     "   TAB               toggle main window / playlist focus\n"
+    "   d                 toggle show folder names\n"
     "   e                 external tag editor\n"
 #ifdef HAS_GUI
+    "   f                 toggle fullscreen (lyrics/cdg)\n"
     "   g                 toggle CDG graphics window\n"
     "   l                 toggle lyrics window\n"
-    "   f                 toggle fullscreen (lyrics/cdg)\n"
+#endif
+    "   s                 toggle shuffle on/off\n"
+#ifdef HAS_GUI
     "   ,                 lyrics font smaller\n"
     "   .                 lyrics font larger\n"
     "   ;                 lyrics font reset\n"
 #endif
-    "   s                 toggle shuffle on/off\n"
     "\n"
     "Config Path Linux:\n"
     "   ~/.config/nope/namp.conf\n"

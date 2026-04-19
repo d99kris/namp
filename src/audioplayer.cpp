@@ -15,6 +15,7 @@
 #endif
 
 #include <QAudioOutput>
+#include <QDir>
 #include <QFileInfo>
 #include <QObject>
 #include <QMediaPlayer>
@@ -87,8 +88,20 @@ void AudioPlayer::SetPlaylist(const QStringList& p_Paths, const QString& p_Curre
       else if (fileInfo.isDir())
       {
         std::vector<std::string> files;
-        ListFiles(fileInfo.absoluteFilePath().toStdString(), files);
-        std::sort(std::begin(files), std::end(files));
+        ListFiles(QDir::cleanPath(fileInfo.absoluteFilePath()).toStdString(), files);
+
+        std::sort(std::begin(files), std::end(files),
+                  [](const std::string& a, const std::string& b)
+        {
+          // Sort files before subdirectories at every directory level by
+          // replacing the last '/' (before the filename) with '\x01',
+          // which sorts before '/' (0x2F) in directory paths.
+          std::string ka = a, kb = b;
+          auto la = ka.rfind('/'); if (la != std::string::npos) ka[la] = '\x01';
+          auto lb = kb.rfind('/'); if (lb != std::string::npos) kb[lb] = '\x01';
+          return ka < kb;
+        });
+
         for (auto& file : files)
         {
           const QString filePath = QString::fromStdString(file);

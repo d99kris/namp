@@ -46,6 +46,7 @@ void UIView::PlaylistUpdated(const QVector<QString>& p_Paths)
   {
     m_Playlist.push_back(TrackInfo(trackPath, QFileInfo(trackPath).completeBaseName(), false, 0, index++));
   }
+  UpdateCommonAncestorPath();
   m_PlaylistLoaded = false;
 }
 
@@ -261,6 +262,44 @@ void UIView::SpectrumChanged(const QVector<float>& /*p_Spectrum*/)
 
 void UIView::ToggleAnalyzer()
 {
+}
+
+void UIView::ToggleFolders()
+{
+}
+
+void UIView::GetViewFolders(bool& p_ViewFolders)
+{
+  p_ViewFolders = m_ViewFolders;
+}
+
+void UIView::SetViewFolders(const bool& p_ViewFolders)
+{
+  m_ViewFolders = p_ViewFolders;
+}
+
+bool UIView::NeedsSeparatorBefore(int /*p_PlaylistIndex*/) const
+{
+  return false;
+}
+
+QString UIView::GetFolderDisplayName(int /*p_PlaylistIndex*/) const
+{
+  return QString();
+}
+
+void UIView::UpdateCommonAncestorPath()
+{
+}
+
+int UIView::VisibleTrackCount() const
+{
+  return m_PlaylistWindowHeight - 2;
+}
+
+int UIView::ScreenRowToTrackIndex(int p_ScreenRow) const
+{
+  return m_PlaylistOffset + p_ScreenRow;
 }
 
 void UIView::DrawSpectrumBars()
