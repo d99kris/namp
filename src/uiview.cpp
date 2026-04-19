@@ -6,6 +6,7 @@
 // namp is distributed under the GPLv2 license, see LICENSE for details.
 //
 
+#include <QDir>
 #include <QFileInfo>
 #include <QObject>
 #include <QTime>
@@ -26,6 +27,7 @@
 #include "uiview.h"
 #include "util.h"
 
+static bool s_ShowTrackPath = false;
 static int s_MinTerminalWidth = 40;
 static int s_MinTerminalHeight = 6;
 static int s_SearchWidthPad = 4;
@@ -172,15 +174,15 @@ void UIView::SelectNext()
 
 void UIView::PagePrevious()
 {
-  const int viewMax = m_PlaylistWindowHeight - 2;
-  SetPlaylistSelected((m_PlaylistSelected - viewMax), true);
+  int pageSize = m_ViewFolders ? VisibleTrackCount() : (m_PlaylistWindowHeight - 2);
+  SetPlaylistSelected((m_PlaylistSelected - pageSize), true);
   Refresh();
 }
 
 void UIView::PageNext()
 {
-  const int viewMax = m_PlaylistWindowHeight - 2;
-  SetPlaylistSelected((m_PlaylistSelected + viewMax), true);
+  int pageSize = m_ViewFolders ? VisibleTrackCount() : (m_PlaylistWindowHeight - 2);
+  SetPlaylistSelected((m_PlaylistSelected + pageSize), true);
   Refresh();
 }
 
@@ -591,11 +593,19 @@ void UIView::DrawPlaylist()
         if (NeedsSeparatorBefore(trackIndex))
         {
           QString folderName = GetFolderDisplayName(trackIndex);
-          int nameLen = folderName.length();
-          int padTotal = viewLength - nameLen - 2;
-          int padLeft = qMax(1, padTotal / 2);
-          int padRight = qMax(1, padTotal - padLeft);
-          QString sepLine = QString("=").repeated(padLeft) + " " + folderName + " " + QString("=").repeated(padRight);
+          QString sepLine;
+          if (folderName.isEmpty())
+          {
+            sepLine = QString(viewLength, '=');
+          }
+          else
+          {
+            int nameLen = folderName.length();
+            int padTotal = viewLength - nameLen - 2;
+            int padLeft = qMax(1, padTotal / 2);
+            int padRight = qMax(1, padTotal - padLeft);
+            sepLine = QString(padLeft, '=') + " " + folderName + " " + QString(padRight, '=');
+          }
           std::wstring sepWStr = Util::TrimPadWString(Util::ToWString(sepLine.toStdString()), viewLength);
           wattron(m_PlaylistWindow, A_DIM);
           std::wstring spaces(viewLength, L' ');
@@ -606,7 +616,7 @@ void UIView::DrawPlaylist()
           if (row >= viewMax) break;
         }
 
-        std::string fullName = m_Playlist.at(trackIndex).name.toStdString();
+        std::string fullName = (s_ShowTrackPath ? m_Playlist.at(trackIndex).path : m_Playlist.at(trackIndex).name).toStdString();
         std::wstring trackName = Util::TrimPadWString(Util::ToWString(fullName), viewLength);
         wattron(m_PlaylistWindow, (trackIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
         std::wstring spaces(viewLength, L' ');
@@ -883,6 +893,23 @@ void UIView::SetPlaylistSelected(int p_SelectedTrack, bool p_UpdateOffset)
           ++rowsAbove;
         }
         m_PlaylistOffset = qMax(0, offset);
+
+        // Clamp: avoid unnecessary empty space at the bottom of the viewport
+        int totalRows = 0;
+        for (int i = m_PlaylistOffset; i < m_Playlist.count(); ++i)
+        {
+          if (NeedsSeparatorBefore(i))
+            ++totalRows;
+          ++totalRows;
+          if (totalRows >= viewMax) break;
+        }
+        while (totalRows < viewMax && m_PlaylistOffset > 0)
+        {
+          --m_PlaylistOffset;
+          ++totalRows;
+          if (NeedsSeparatorBefore(m_PlaylistOffset))
+            ++totalRows;
+        }
       }
       else
       {
@@ -960,7 +987,7 @@ QString UIView::GetFolderDisplayName(int p_PlaylistIndex) const
   {
     QString relative = dirPath.mid(m_CommonAncestorPath.length());
     if (relative.startsWith('/')) relative = relative.mid(1);
-    if (!relative.isEmpty()) return relative;
+    return relative;
   }
   return QFileInfo(dirPath).fileName();
 }
@@ -985,6 +1012,24 @@ void UIView::UpdateCommonAncestorPath()
   }
 
   m_CommonAncestorPath = commonParts.join('/');
+}
+
+int UIView::VisibleTrackCount() const
+{
+  const int viewMax = m_PlaylistWindowHeight - 2;
+  int count = 0;
+  int rows = 0;
+  for (int i = m_PlaylistOffset; i < m_Playlist.count() && rows < viewMax; ++i)
+  {
+    if (NeedsSeparatorBefore(i))
+      ++rows;
+    if (rows < viewMax)
+    {
+      ++count;
+      ++rows;
+    }
+  }
+  return qMax(1, count);
 }
 
 int UIView::ScreenRowToTrackIndex(int p_ScreenRow) const

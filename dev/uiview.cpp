@@ -46,6 +46,7 @@ void UIView::PlaylistUpdated(const QVector<QString>& p_Paths)
   {
     m_Playlist.push_back(TrackInfo(trackPath, QFileInfo(trackPath).completeBaseName(), false, 0, index++));
   }
+  UpdateCommonAncestorPath();
   m_PlaylistLoaded = false;
 }
 
@@ -285,6 +286,15 @@ bool UIView::NeedsSeparatorBefore(int /*p_PlaylistIndex*/) const
 QString UIView::GetFolderDisplayName(int /*p_PlaylistIndex*/) const
 {
   return QString();
+}
+
+void UIView::UpdateCommonAncestorPath()
+{
+}
+
+int UIView::VisibleTrackCount() const
+{
+  return m_PlaylistWindowHeight - 2;
 }
 
 int UIView::ScreenRowToTrackIndex(int p_ScreenRow) const

@@ -114,6 +114,7 @@ private:
   QString GetFolderDisplayName(int p_PlaylistIndex) const;
   void UpdateCommonAncestorPath();
   int ScreenRowToTrackIndex(int p_ScreenRow) const;
+  int VisibleTrackCount() const;
 
 private:
   Scrobbler* m_Scrobbler = nullptr;
