@@ -317,3 +317,15 @@ void UIView::LyricsUpdated(bool /*p_Enabled*/)
 void UIView::ExternalEdit()
 {
 }
+
+void UIView::Enqueue()
+{
+}
+
+void UIView::Unenqueue()
+{
+}
+
+void UIView::QueueUpdated(const QVector<int>& /*p_Queue*/)
+{
+}

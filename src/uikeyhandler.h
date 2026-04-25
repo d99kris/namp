@@ -43,6 +43,8 @@ signals:
   void ToggleAnalyzer();
   void ToggleFolders();
   void ExternalEdit();
+  void Enqueue();
+  void Unenqueue();
 #ifdef HAS_GUI
   void ToggleCdg();
   void ToggleLyrics();

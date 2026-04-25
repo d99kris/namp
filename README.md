@@ -51,11 +51,13 @@ Interactive Commands:
     ENTER             play selected track
     TAB               toggle main window / playlist focus
     d                 toggle show folder names
-    e                 external tag editor
+    e                 enqueue selected track
+    E                 unenqueue selected track
     f                 toggle fullscreen (lyrics/cdg)
     g                 toggle CDG graphics window
     l                 toggle lyrics window
     s                 toggle shuffle on/off
+    t                 external tag editor
     ,                 lyrics font smaller
     .                 lyrics font larger
     ;                 lyrics font reset

@@ -259,6 +259,32 @@ void AudioPlayer::GetCurrentTrack(QString& p_CurrentTrack)
   p_CurrentTrack = m_CurrentTrack;
 }
 
+void AudioPlayer::GetQueuePaths(QVector<QString>& p_QueuePaths)
+{
+  p_QueuePaths.clear();
+  for (int idx : m_Queue)
+  {
+    if ((idx >= 0) && (idx < m_PlayListPaths.size()))
+    {
+      p_QueuePaths.append(m_PlayListPaths.at(idx));
+    }
+  }
+}
+
+void AudioPlayer::SetQueuePaths(const QVector<QString>& p_QueuePaths)
+{
+  m_Queue.clear();
+  for (const QString& path : p_QueuePaths)
+  {
+    const int idx = m_PlayListPaths.indexOf(path);
+    if (idx >= 0)
+    {
+      m_Queue.append(idx);
+    }
+  }
+  emit QueueUpdated(m_Queue);
+}
+
 bool AudioPlayer::IsInited()
 {
 #if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
@@ -402,7 +428,12 @@ void AudioPlayer::Previous()
 void AudioPlayer::Next()
 {
   Log::Debug("Next() called, currentIndex=%d", m_CurrentIndex);
-  if (m_Shuffle && (m_PlayListPaths.size() > 2))
+  if (!m_Queue.isEmpty())
+  {
+    m_CurrentIndex = m_Queue.takeFirst();
+    emit QueueUpdated(m_Queue);
+  }
+  else if (m_Shuffle && (m_PlayListPaths.size() > 2))
   {
     int newIndex = m_CurrentIndex;
     while (newIndex == m_CurrentIndex)
@@ -423,6 +454,21 @@ void AudioPlayer::SetCurrentIndex(int p_CurrentIndex)
 {
   m_CurrentIndex = p_CurrentIndex;
   OnMediaChanged(true /*p_Forward*/);
+}
+
+void AudioPlayer::EnqueueTrack(int p_Index)
+{
+  if ((p_Index < 0) || (p_Index >= m_PlayListPaths.size())) return;
+  if (!m_Queue.isEmpty() && (m_Queue.last() == p_Index)) return;
+  m_Queue.append(p_Index);
+  emit QueueUpdated(m_Queue);
+}
+
+void AudioPlayer::UnenqueueTrack(int p_Index)
+{
+  const int removed = m_Queue.removeAll(p_Index);
+  if (removed == 0) return;
+  emit QueueUpdated(m_Queue);
 }
 
 void AudioPlayer::SetAnalyzerEnabled(bool p_Enabled)

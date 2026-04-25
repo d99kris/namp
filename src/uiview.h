@@ -14,6 +14,8 @@
 #include <QTimer>
 #include <QVector>
 
+#include <string>
+
 #include <ncurses.h>
 
 #include "common.h"
@@ -86,6 +88,9 @@ public slots:
   void ToggleFolders();
   void LyricsUpdated(bool p_Enabled);
   void ExternalEdit();
+  void Enqueue();
+  void Unenqueue();
+  void QueueUpdated(const QVector<int>& p_Queue);
 
 private slots:
   void Timer();
@@ -97,6 +102,8 @@ signals:
   void Play();
   void ExternalEdit(int);
   void AnalyzerEnabled(bool);
+  void EnqueueTrack(int);
+  void UnenqueueTrack(int);
 
 private:
   void SetUIState(UIState p_UIState);
@@ -115,6 +122,7 @@ private:
   void UpdateCommonAncestorPath();
   int ScreenRowToTrackIndex(int p_ScreenRow) const;
   int VisibleTrackCount() const;
+  std::wstring GetQueueMarker(int p_TrackIndex) const;
 
 private:
   Scrobbler* m_Scrobbler = nullptr;
@@ -142,6 +150,7 @@ private:
 
   QVector<TrackInfo> m_Playlist;
   QVector<TrackInfo> m_Resultlist;
+  QVector<int> m_Queue;
 
   bool m_PlaylistLoaded = true;
   int m_TrackPositionSec = 0;

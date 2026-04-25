@@ -145,7 +145,15 @@ void UIKeyhandler::ProcessKeyEvent()
       break;
 
     case 'e':
+      emit Enqueue();
+      break;
+
     case 'E':
+      emit Unenqueue();
+      break;
+
+    case 't':
+    case 'T':
       emit ExternalEdit();
       break;
 

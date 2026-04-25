@@ -190,10 +190,14 @@ int main(int argc, char *argv[])
   QObject::connect(&uiKeyhandler, SIGNAL(ExternalEdit()), &uiView, SLOT(ExternalEdit()));
   QObject::connect(&uiKeyhandler, SIGNAL(ToggleAnalyzer()), &uiView, SLOT(ToggleAnalyzer()));
   QObject::connect(&uiKeyhandler, SIGNAL(ToggleFolders()), &uiView, SLOT(ToggleFolders()));
+  QObject::connect(&uiKeyhandler, SIGNAL(Enqueue()), &uiView, SLOT(Enqueue()));
+  QObject::connect(&uiKeyhandler, SIGNAL(Unenqueue()), &uiView, SLOT(Unenqueue()));
   QObject::connect(&uiView, SIGNAL(ExternalEdit(int)), &audioPlayer, SLOT(ExternalEdit(int)));
   QObject::connect(&uiView, SIGNAL(SetCurrentIndex(int)), &audioPlayer, SLOT(SetCurrentIndex(int)));
   QObject::connect(&uiView, SIGNAL(Play()), &audioPlayer, SLOT(Play()));
   QObject::connect(&uiView, SIGNAL(AnalyzerEnabled(bool)), &audioPlayer, SLOT(SetAnalyzerEnabled(bool)));
+  QObject::connect(&uiView, SIGNAL(EnqueueTrack(int)), &audioPlayer, SLOT(EnqueueTrack(int)));
+  QObject::connect(&uiView, SIGNAL(UnenqueueTrack(int)), &audioPlayer, SLOT(UnenqueueTrack(int)));
 
   // Signals to ui view
   QObject::connect(&audioPlayer, SIGNAL(PlaylistUpdated(const QVector<QString>&)), &uiView, SLOT(PlaylistUpdated(const QVector<QString>&)));
@@ -204,6 +208,7 @@ int main(int argc, char *argv[])
   QObject::connect(&audioPlayer, SIGNAL(PlaybackModeUpdated(bool)), &uiView, SLOT(PlaybackModeUpdated(bool)));
   QObject::connect(&audioPlayer, SIGNAL(RefreshTrackData(int)), &uiView, SLOT(RefreshTrackData(int)));
   QObject::connect(&audioPlayer, SIGNAL(SpectrumChanged(const QVector<float>&)), &uiView, SLOT(SpectrumChanged(const QVector<float>&)));
+  QObject::connect(&audioPlayer, SIGNAL(QueueUpdated(const QVector<int>&)), &uiView, SLOT(QueueUpdated(const QVector<int>&)));
   QObject::connect(&uiKeyhandler, SIGNAL(Search()), &uiView, SLOT(Search()));
   QObject::connect(&uiKeyhandler, SIGNAL(SelectPrevious()), &uiView, SLOT(SelectPrevious()));
   QObject::connect(&uiKeyhandler, SIGNAL(SelectNext()), &uiView, SLOT(SelectNext()));
@@ -285,6 +290,24 @@ int main(int argc, char *argv[])
   // Set playlist and track
   audioPlayer.SetPlaylist(arguments, currentTrack);
 
+  // Restore queue (if enabled and path arguments match the previous session)
+  bool persistQueue = settings.value("player/persist_queue", true).toBool();
+  if (persistQueue)
+  {
+    QStringList savedArguments = settings.value("player/arguments").toStringList();
+    QStringList savedSorted = savedArguments;
+    savedSorted.sort();
+    QStringList currentSorted = arguments;
+    currentSorted.sort();
+    if (savedSorted == currentSorted)
+    {
+      QStringList savedQueue = settings.value("player/queue").toStringList();
+      QVector<QString> queuePaths;
+      for (const QString& path : savedQueue) queuePaths.append(path);
+      audioPlayer.SetQueuePaths(queuePaths);
+    }
+  }
+
   // Start playback and main event loop
   audioPlayer.Play();
   int rv = application.exec();
@@ -300,6 +323,21 @@ int main(int argc, char *argv[])
   settings.setValue("player/volume", volume);
   audioPlayer.GetCurrentTrack(currentTrack);
   settings.setValue("player/track", currentTrack);
+  settings.setValue("player/persist_queue", persistQueue);
+  if (persistQueue)
+  {
+    QVector<QString> queuePaths;
+    audioPlayer.GetQueuePaths(queuePaths);
+    QStringList queueList;
+    for (const QString& path : queuePaths) queueList.append(path);
+    settings.setValue("player/arguments", arguments);
+    settings.setValue("player/queue", queueList);
+  }
+  else
+  {
+    settings.remove("player/arguments");
+    settings.remove("player/queue");
+  }
   uiView.GetScrollTitle(scrollTitle);
   settings.setValue("ui/scrolltitle", scrollTitle);
   uiView.GetViewPosition(viewPosition);
@@ -370,13 +408,15 @@ static void ShowHelp()
     "   ENTER             play selected track\n"
     "   TAB               toggle main window / playlist focus\n"
     "   d                 toggle show folder names\n"
-    "   e                 external tag editor\n"
+    "   e                 enqueue selected track\n"
+    "   E                 unenqueue selected track\n"
 #ifdef HAS_GUI
     "   f                 toggle fullscreen (lyrics/cdg)\n"
     "   g                 toggle CDG graphics window\n"
     "   l                 toggle lyrics window\n"
 #endif
     "   s                 toggle shuffle on/off\n"
+    "   t                 external tag editor\n"
 #ifdef HAS_GUI
     "   ,                 lyrics font smaller\n"
     "   .                 lyrics font larger\n"

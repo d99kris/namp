@@ -617,11 +617,16 @@ void UIView::DrawPlaylist()
         }
 
         std::string fullName = (s_ShowTrackPath ? m_Playlist.at(trackIndex).path : m_Playlist.at(trackIndex).name).toStdString();
-        std::wstring trackName = Util::TrimPadWString(Util::ToWString(fullName), viewLength);
+        std::wstring marker = GetQueueMarker(trackIndex);
+        const int markerWidth = Util::WStringWidth(marker);
+        const int nameWidth = qMax(0, viewLength - markerWidth);
+        std::wstring trackName = Util::TrimPadWString(Util::ToWString(fullName), nameWidth);
+        std::wstring line = trackName + marker;
+        line = Util::TrimPadWString(line, viewLength);
         wattron(m_PlaylistWindow, (trackIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
         std::wstring spaces(viewLength, L' ');
         mvwaddnwstr(m_PlaylistWindow, row + 1, 2, spaces.c_str(), spaces.size());
-        mvwaddnwstr(m_PlaylistWindow, row + 1, 2, trackName.c_str(), trackName.size());
+        mvwaddnwstr(m_PlaylistWindow, row + 1, 2, line.c_str(), line.size());
         wattroff(m_PlaylistWindow, (trackIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
         ++row;
         ++trackIndex;
@@ -655,11 +660,16 @@ void UIView::DrawPlaylist()
         const int playlistIndex = i + m_PlaylistOffset;
         const int viewLength = m_PlaylistWindowWidth - 4;
         std::string fullName = m_Resultlist.at(playlistIndex).name.toStdString();
-        std::wstring trackName = Util::TrimPadWString(Util::ToWString(fullName), viewLength);
+        std::wstring marker = GetQueueMarker(m_Resultlist.at(playlistIndex).index);
+        const int markerWidth = Util::WStringWidth(marker);
+        const int nameWidth = qMax(0, viewLength - markerWidth);
+        std::wstring trackName = Util::TrimPadWString(Util::ToWString(fullName), nameWidth);
+        std::wstring line = trackName + marker;
+        line = Util::TrimPadWString(line, viewLength);
         wattron(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
         std::wstring spaces(viewLength, L' ');
         mvwaddnwstr(m_PlaylistWindow, i + 1, 2, spaces.c_str(), spaces.size());
-        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, trackName.c_str(), trackName.size());
+        mvwaddnwstr(m_PlaylistWindow, i + 1, 2, line.c_str(), line.size());
         wattroff(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
       }
 
@@ -1082,4 +1092,41 @@ void UIView::DrawSpectrumBars()
 void UIView::ExternalEdit()
 {
   emit ExternalEdit(m_PlaylistSelected);
+}
+
+void UIView::Enqueue()
+{
+  if (m_UIState & (UISTATE_PLAYER | UISTATE_PLAYLIST))
+  {
+    emit EnqueueTrack(m_PlaylistSelected);
+  }
+}
+
+void UIView::Unenqueue()
+{
+  if (m_UIState & (UISTATE_PLAYER | UISTATE_PLAYLIST))
+  {
+    emit UnenqueueTrack(m_PlaylistSelected);
+  }
+}
+
+void UIView::QueueUpdated(const QVector<int>& p_Queue)
+{
+  m_Queue = p_Queue;
+  Refresh();
+}
+
+std::wstring UIView::GetQueueMarker(int p_TrackIndex) const
+{
+  QStringList positions;
+  for (int i = 0; i < m_Queue.size(); ++i)
+  {
+    if (m_Queue.at(i) == p_TrackIndex)
+    {
+      positions.append(QString::number(i + 1));
+    }
+  }
+  if (positions.isEmpty()) return std::wstring();
+  QString marker = " [" + positions.join(",") + "]";
+  return Util::ToWString(marker.toStdString());
 }

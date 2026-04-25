@@ -33,6 +33,8 @@ public:
   void GetPlaybackMode(bool& p_Shuffle);
   void GetVolume(int& p_Volume);
   void GetCurrentTrack(QString& p_CurrentTrack);
+  void GetQueuePaths(QVector<QString>& p_QueuePaths);
+  void SetQueuePaths(const QVector<QString>& p_QueuePaths);
   bool IsInited();
   void Shutdown();
 
@@ -49,6 +51,7 @@ signals:
   void PlaybackModeUpdated(bool p_Shuffle);
   void RefreshTrackData(int p_TrackIndex);
   void SpectrumChanged(const QVector<float>& p_Spectrum);
+  void QueueUpdated(const QVector<int>& p_Queue);
 #ifdef HAS_GUI
   void TrackChanged(const QString& p_TrackPath);
   void RefreshLyrics(const QString& p_TrackPath);
@@ -72,6 +75,8 @@ public slots:
   void Next();
   void SetCurrentIndex(int);
   void SetAnalyzerEnabled(bool p_Enabled);
+  void EnqueueTrack(int p_Index);
+  void UnenqueueTrack(int p_Index);
 
 private slots:
   void OnMediaStatusChanged(QMediaPlayer::MediaStatus p_MediaStatus);
@@ -94,6 +99,7 @@ private:
   int m_CurrentIndex = 0;
   QString m_CurrentTrack;
   QList<int> m_CurrentIndexHistory;
+  QVector<int> m_Queue;
   Spectrum* m_Spectrum = nullptr;
 #if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
   QScopedPointer<QAudioOutput> m_AudioOutput;
