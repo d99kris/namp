@@ -2,7 +2,7 @@
 
 # make.sh
 #
-# Copyright (C) 2020-2022 Kristofer Berggren
+# Copyright (C) 2020-2026 Kristofer Berggren
 # All rights reserved.
 #
 # See LICENSE for redistribution information.
@@ -85,12 +85,12 @@ if [[ "${DEPS}" == "1" ]]; then
     DISTRO="$(lsb_release -i | awk -F':\t' '{print $2}')"
     if [[ "${DISTRO}" == "Ubuntu" ]]; then
       sudo apt -y update && \
-      sudo apt -y install libncursesw5-dev libtag1-dev qt6-base-dev qt6-multimedia-dev gstreamer1.0-pulseaudio ubuntu-restricted-extras || exiterr "deps failed (linux), exiting."
+      sudo apt -y install cmake libncursesw5-dev libtag1-dev qt6-base-dev qt6-multimedia-dev gstreamer1.0-pulseaudio ubuntu-restricted-extras || exiterr "deps failed (linux), exiting."
     else
       exiterr "deps failed (unsupported linux distro ${DISTRO}), exiting."
     fi
   elif [ "${OS}" == "Darwin" ]; then
-    brew install ncurses taglib gnu-sed qt || exiterr "deps failed (mac), exiting."
+    brew install cmake ncurses taglib gnu-sed qt || exiterr "deps failed (mac), exiting."
   else
     exiterr "deps failed (unsupported os ${OS}), exiting."
   fi
@@ -100,30 +100,28 @@ fi
 if [[ "${BUILD}" == "1" ]]; then
   OS="$(uname)"
   MAKEARGS=""
-  QMAKE="qmake"
+  CMAKEARGS="${DEV_CMAKEARGS:-} ${NAMP_CMAKEARGS:-}"
   if [ "${OS}" == "Linux" ]; then
     MAKEARGS="-j$(nproc)"
-    QMAKE="qmake6"
   elif [ "${OS}" == "Darwin" ]; then
     MAKEARGS="-j$(sysctl -n hw.ncpu)"
-    QMAKE="qmake"
   fi
-  mkdir -p build && cd build && ${QMAKE} .. && make ${MAKEARGS} && cd .. || exiterr "build failed, exiting."
+  echo "-- Using cmake ${CMAKEARGS}"
+  echo "-- Using make ${MAKEARGS}"
+  mkdir -p build && cd build && cmake ${CMAKEARGS} .. && make ${MAKEARGS} && cd .. || exiterr "build failed, exiting."
 fi
 
 # debug
 if [[ "${DEBUG}" == "1" ]]; then
   OS="$(uname)"
   MAKEARGS=""
-  QMAKE="qmake"
+  CMAKEARGS="${DEV_CMAKEARGS:-} ${NAMP_CMAKEARGS:-}"
   if [ "${OS}" == "Linux" ]; then
     MAKEARGS="-j$(nproc)"
-    QMAKE="qmake6"
   elif [ "${OS}" == "Darwin" ]; then
     MAKEARGS="-j$(sysctl -n hw.ncpu)"
-    QMAKE="qmake"
   fi
-  mkdir -p dbgbuild && cd dbgbuild && ${QMAKE} "QMAKE_CXXFLAGS+=-g" "QMAKE_CFLAGS+=-g" "QMAKE_LFLAGS+=-g" "QMAKE_CXXFLAGS_RELEASE-=-O2" "QMAKE_CXXFLAGS_RELEASE+=-O0" "QMAKE_CFLAGS_RELEASE-=-O2" "QMAKE_CFLAGS_RELEASE+=-O0" .. && make ${MAKEARGS} || exiterr "debug build failed, exiting."
+  mkdir -p dbgbuild && cd dbgbuild && cmake -DCMAKE_BUILD_TYPE=Debug ${CMAKEARGS} .. && make ${MAKEARGS} || exiterr "debug build failed, exiting."
   if [ "${OS}" == "Darwin" ]; then
     dsymutil namp -o namp.dSYM || exiterr "dsymutil failed, exiting."
   fi
@@ -134,15 +132,13 @@ fi
 if [[ "${DEVBUILD}" == "1" ]]; then
   OS="$(uname)"
   MAKEARGS=""
-  QMAKE="qmake"
+  CMAKEARGS="${DEV_CMAKEARGS:-} ${NAMP_CMAKEARGS:-}"
   if [ "${OS}" == "Linux" ]; then
     MAKEARGS="-j$(nproc)"
-    QMAKE="qmake6"
   elif [ "${OS}" == "Darwin" ]; then
     MAKEARGS="-j$(sysctl -n hw.ncpu)"
-    QMAKE="qmake"
   fi
-  mkdir -p devbuild && cd devbuild && ${QMAKE} CONFIG+=DEVBUILD .. && make ${MAKEARGS} && cd .. || exiterr "devbuild failed, exiting."
+  mkdir -p devbuild && cd devbuild && cmake -DDEVBUILD=ON ${CMAKEARGS} .. && make ${MAKEARGS} && cd .. || exiterr "devbuild failed, exiting."
 fi
 
 # tests

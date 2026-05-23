@@ -75,11 +75,11 @@ Linux
 
 **Dependencies Ubuntu 20.04**
 
-    sudo apt install libncursesw5-dev libtag1-dev qt5-default qt5-qmake qtmultimedia5-dev libqt5multimedia5-plugins ubuntu-restricted-extras
+    sudo apt install libncursesw5-dev libtag1-dev cmake qtmultimedia5-dev libqt5multimedia5-plugins ubuntu-restricted-extras
 
 **Dependencies Ubuntu 22.04 onwards**
 
-    sudo apt install libncursesw5-dev libtag1-dev qt6-base-dev qt6-multimedia-dev gstreamer1.0-pulseaudio ubuntu-restricted-extras
+    sudo apt install cmake libncursesw5-dev libtag1-dev qt6-base-dev qt6-multimedia-dev gstreamer1.0-pulseaudio ubuntu-restricted-extras
 
 **Source**
 
@@ -87,7 +87,7 @@ Linux
 
 **Build**
 
-    mkdir -p build && cd build && qmake .. && make -s
+    mkdir -p build && cd build && cmake .. && make -s
 
 **Install**
 
@@ -98,7 +98,7 @@ macOS
 
 **Dependencies**
 
-    brew install ncurses taglib gnu-sed
+    brew install cmake ncurses taglib gnu-sed
     brew install qt
 
 **Source**
@@ -107,7 +107,7 @@ macOS
 
 **Build**
 
-    mkdir -p build && cd build && qmake .. && make -s
+    mkdir -p build && cd build && cmake .. && make -s
 
 **Install**
 
