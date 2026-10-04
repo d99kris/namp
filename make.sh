@@ -57,7 +57,6 @@ case "${1%/}" in
   all)
     DEPS="1"
     BUILD="1"
-    DEBUG="1"
     DEVBUILD="1"
     TESTS="1"
     DOC="1"
