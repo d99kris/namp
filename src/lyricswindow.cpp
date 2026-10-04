@@ -117,7 +117,7 @@ void LyricsWindow::SetLyrics(const LyricsData& p_Lyrics)
   if (m_HasLyrics && !m_Lyrics.synced && m_DurationMs > 0)
     AssignSyntheticTimestamps();
 
-  if (m_HasLyrics && m_Enabled)
+  if (m_HasLyrics && m_Enabled && m_WindowEnabled)
   {
     show();
   }
@@ -172,7 +172,7 @@ void LyricsWindow::PositionChanged(qint64 p_PositionMs)
 
   if (m_Lyrics.synced)
   {
-    int newLine = FindCurrentLine(p_PositionMs);
+    int newLine = Lyrics::FindCurrentLine(m_Lyrics, p_PositionMs);
     if (newLine != m_CurrentLine)
     {
       m_CurrentLine = newLine;
@@ -262,28 +262,8 @@ void LyricsWindow::DurationChanged(qint64 p_DurationMs)
 
 void LyricsWindow::AssignSyntheticTimestamps()
 {
-  if (m_Lyrics.lines.isEmpty() || m_DurationMs <= 0) return;
-
-  // Weight each line by character count so long verses get more time than
-  // short chorus markers. +1 keeps empty lines from being instantaneous.
-  long long totalWeight = 0;
-  QVector<long long> weights(m_Lyrics.lines.size());
-  for (int i = 0; i < m_Lyrics.lines.size(); i++)
-  {
-    weights[i] = m_Lyrics.lines[i].text.length() + 1;
-    totalWeight += weights[i];
-  }
-  if (totalWeight <= 0) return;
-
-  long long accum = 0;
-  for (int i = 0; i < m_Lyrics.lines.size(); i++)
-  {
-    m_Lyrics.lines[i].timeMs = (m_DurationMs * accum) / totalWeight;
-    accum += weights[i];
-  }
-
-  m_Lyrics.synced = true;
-  m_UsesSyntheticTimestamps = true;
+  if (Lyrics::AssignSyntheticTimestamps(m_Lyrics, m_DurationMs))
+    m_UsesSyntheticTimestamps = true;
 }
 
 void LyricsWindow::SetEnabled(bool p_Enabled)
@@ -296,6 +276,20 @@ void LyricsWindow::SetEnabled(bool p_Enabled)
 void LyricsWindow::GetEnabled(bool& p_Enabled)
 {
   p_Enabled = m_Enabled;
+}
+
+void LyricsWindow::SetWindowEnabled(bool p_WindowEnabled)
+{
+  m_WindowEnabled = p_WindowEnabled;
+  if (!m_WindowEnabled)
+  {
+    hide();
+  }
+  else if (m_Enabled && m_HasLyrics)
+  {
+    show();
+    raise();
+  }
 }
 
 void LyricsWindow::SetFontScale(float p_Scale)
@@ -342,7 +336,7 @@ void LyricsWindow::ToggleLyrics()
   m_Enabled = !m_Enabled;
   if (m_Enabled)
   {
-    if (m_HasLyrics)
+    if (m_HasLyrics && m_WindowEnabled)
     {
       show();
       raise();
@@ -362,21 +356,6 @@ void LyricsWindow::ToggleFullScreen()
     showNormal();
   else
     showFullScreen();
-}
-
-int LyricsWindow::FindCurrentLine(qint64 p_PositionMs) const
-{
-  if (m_Lyrics.lines.isEmpty()) return -1;
-
-  int result = -1;
-  for (int i = 0; i < m_Lyrics.lines.size(); i++)
-  {
-    if (m_Lyrics.lines[i].timeMs <= p_PositionMs)
-      result = i;
-    else
-      break;
-  }
-  return result;
 }
 
 void LyricsWindow::paintEvent(QPaintEvent*)
@@ -497,6 +476,25 @@ void LyricsWindow::closeEvent(QCloseEvent* p_Event)
 void LyricsWindow::showEvent(QShowEvent* p_Event)
 {
   QWidget::showEvent(p_Event);
+
+  // Position updates are ignored while hidden, so catch up with playback
+  // without animating from the stale scroll position.
+  if (m_HasLyrics)
+  {
+    if (m_Lyrics.synced)
+    {
+      m_CurrentLine = Lyrics::FindCurrentLine(m_Lyrics, m_PositionMs);
+      m_ScrollTarget = ComputeScrollTarget();
+    }
+    else
+    {
+      m_UnsyncedRatchetPosMs = m_PositionMs;
+      m_ScrollTarget = ComputeUnsyncedScrollTarget();
+    }
+    m_ScrollCurrent = m_ScrollTarget;
+    m_ScrollTimer.stop();
+    update();
+  }
 #ifdef __APPLE__
   ShowDockIcon();
 #endif

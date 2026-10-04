@@ -19,6 +19,7 @@
 #include <ncurses.h>
 
 #include "common.h"
+#include "lyrics.h"
 #include "scrobbler.h"
 
 struct TrackInfo
@@ -63,6 +64,8 @@ public:
   void GetViewFolders(bool& p_ViewFolders);
   void SetViewFolders(const bool& p_ViewFolders);
   void SetLyricsAvailable(bool p_Available);
+  void GetLyricsWindowEnabled(bool& p_LyricsWindowEnabled);
+  void SetLyricsWindowEnabled(const bool& p_LyricsWindowEnabled);
 
 public slots:
   void PlaylistUpdated(const QVector<QString>& p_Paths);
@@ -87,6 +90,11 @@ public slots:
   void ToggleAnalyzer();
   void ToggleFolders();
   void LyricsUpdated(bool p_Enabled);
+  void CdgUpdated(bool p_HasCdg, bool p_Enabled);
+  void SetLyrics(const LyricsData& p_Lyrics);
+  void ClearLyrics();
+  void LyricsLoading();
+  void ToggleLyricsWindow();
   void ExternalEdit();
   void Enqueue();
   void Unenqueue();
@@ -104,6 +112,7 @@ signals:
   void AnalyzerEnabled(bool);
   void EnqueueTrack(int);
   void UnenqueueTrack(int);
+  void LyricsWindowEnabledChanged(bool);
 
 private:
   void SetUIState(UIState p_UIState);
@@ -115,6 +124,11 @@ private:
   void DrawSpectrumBars();
   QString GetPlayerTrackName(int p_MaxLength);
   void DrawPlaylist();
+  void DrawLyrics();
+  void UpdateLyricsRows(int p_Width);
+  bool IsLyricsViewActive() const;
+  void SetLyricsScrollRow(int p_Row);
+  void UpdateLyricsWindowVisible();
   void LoadTracksData();
   void SetPlaylistSelected(int p_SelectedTrack, bool p_UpdateOffset);
   bool NeedsSeparatorBefore(int p_PlaylistIndex) const;
@@ -155,6 +169,8 @@ private:
   bool m_PlaylistLoaded = true;
   int m_TrackPositionSec = 0;
   int m_TrackDurationSec = 0;
+  qint64 m_TrackPositionMs = 0;
+  qint64 m_TrackDurationMs = 0;
   int m_PlaylistPosition = 0;
   int m_PlaylistSelected = 0;
   int m_PlaylistOffset = 0;
@@ -162,6 +178,19 @@ private:
   bool m_Shuffle = false;
   bool m_LyricsEnabled = false;
   bool m_LyricsAvailable = false;
+  bool m_CdgTrack = false;
+  bool m_CdgEnabled = false;
+  bool m_LyricsIsLoading = false;
+  bool m_LyricsSynthetic = false;
+  LyricsData m_Lyrics;
+  int m_LyricsScrollRow = 0;
+  int m_LyricsScrollMax = 0;
+  std::vector<std::wstring> m_LyricsRows;
+  std::vector<int> m_LyricsRowLines;
+  std::vector<int> m_LyricsLineFirstRow;
+  int m_LyricsRowsWidth = -1;
+  bool m_LyricsWindowEnabled = true;
+  bool m_LyricsWindowVisible = true;
   int m_ShuffleX = 18;
   int m_LyricsX = -1;
   bool m_ScrollTitle = false;

@@ -54,10 +54,11 @@ Interactive Commands:
     e                 enqueue selected track
     E                 unenqueue selected track
     f                 toggle fullscreen (lyrics/cdg)
-    g                 toggle CDG graphics window
-    l                 toggle lyrics window
+    k                 toggle CDG karaoke window
+    l                 toggle lyrics view
     s                 toggle shuffle on/off
     t                 external tag editor
+    w                 toggle lyrics window / terminal lyrics
     ,                 lyrics font smaller
     .                 lyrics font larger
     ;                 lyrics font reset

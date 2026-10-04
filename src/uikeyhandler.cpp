@@ -158,8 +158,8 @@ void UIKeyhandler::ProcessKeyEvent()
       break;
 
 #ifdef HAS_GUI
-    case 'g':
-    case 'G':
+    case 'k':
+    case 'K':
       emit ToggleCdg();
       break;
 
@@ -171,6 +171,11 @@ void UIKeyhandler::ProcessKeyEvent()
     case 'f':
     case 'F':
       emit ToggleFullScreen();
+      break;
+
+    case 'w':
+    case 'W':
+      emit ToggleLyricsWindow();
       break;
 
     case ',':
@@ -249,6 +254,12 @@ void UIKeyhandler::ProcessMouseEvent(const UIMouseEvent& p_UIMouseEvent)
     case UIELEM_LYRICS:
 #ifdef HAS_GUI
       emit ToggleLyrics();
+#endif
+      break;
+
+    case UIELEM_KARAOKE:
+#ifdef HAS_GUI
+      emit ToggleCdg();
 #endif
       break;
 

@@ -26,6 +26,7 @@ public:
   float GetDefaultFontScale() const;
 
 public slots:
+  void SetWindowEnabled(bool p_WindowEnabled);
   void SetLyrics(const LyricsData& p_Lyrics);
   void ClearLyrics();
   void LyricsLoading();
@@ -50,7 +51,6 @@ protected:
   void resizeEvent(QResizeEvent* p_Event) override;
 
 private:
-  int FindCurrentLine(qint64 p_PositionMs) const;
   float ComputeScrollTarget() const;
   float ComputeUnsyncedScrollTarget() const;
   void AssignSyntheticTimestamps();
@@ -58,6 +58,7 @@ private:
   LyricsData m_Lyrics;
   bool m_HasLyrics = false;
   bool m_Enabled = false;
+  bool m_WindowEnabled = true;
   int m_CurrentLine = -1;
   qint64 m_DurationMs = 0;
   qint64 m_PositionMs = 0;

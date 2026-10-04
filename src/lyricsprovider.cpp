@@ -49,6 +49,11 @@ void LyricsProvider::TrackChanged(const QString& p_TrackPath)
 {
   m_PendingTrackPath = p_TrackPath;
 
+  // Any track change (or refresh of the current track after a tag edit)
+  // invalidates cached lyrics.
+  m_CachedTrackPath.clear();
+  m_CachedLyrics = LyricsData();
+
   // Skip lookups entirely when the lyrics window is disabled — no point
   // hitting LRCLIB (or parsing tags) if nothing will display the result.
   if (!m_Enabled)
@@ -60,8 +65,8 @@ void LyricsProvider::TrackChanged(const QString& p_TrackPath)
 
   m_CurrentTrackPath = p_TrackPath;
 
-  // If a CDG file exists for this track, hide lyrics window immediately —
-  // CDG window will take over.
+  // If a CDG file exists for this track, clear lyrics immediately — CDG
+  // karaoke takes over.
   QFileInfo fileInfo(p_TrackPath);
   QString basePath = fileInfo.path() + "/" + fileInfo.completeBaseName();
   if (QFile::exists(basePath + ".cdg") || QFile::exists(basePath + ".CDG"))
@@ -95,6 +100,16 @@ void LyricsProvider::SetEnabled(bool p_Enabled)
   }
 
   Log::Info("Lyrics lookup enabled");
+
+  // Re-enabled for the same track whose lyrics were already loaded: reuse
+  // them rather than waiting on debounce and a new lookup.
+  if (!m_PendingTrackPath.isEmpty() && (m_PendingTrackPath == m_CachedTrackPath))
+  {
+    Log::Info("Lyrics loaded from cache for: %s", m_PendingTrackPath.toStdString().c_str());
+    m_CurrentTrackPath = m_PendingTrackPath;
+    emit LyricsReady(m_CachedLyrics);
+    return;
+  }
 
   // Re-enabled: kick off a lookup for whatever track is currently loaded.
   if (!m_PendingTrackPath.isEmpty())
@@ -142,6 +157,13 @@ void LyricsProvider::DoLookup()
   emit LyricsCleared();
 }
 
+void LyricsProvider::EmitLyricsReady(const LyricsData& p_Lyrics)
+{
+  m_CachedTrackPath = m_CurrentTrackPath;
+  m_CachedLyrics = p_Lyrics;
+  emit LyricsReady(p_Lyrics);
+}
+
 bool LyricsProvider::TryLoadSidecarLrc(const QString& p_TrackPath)
 {
   QFileInfo fileInfo(p_TrackPath);
@@ -172,7 +194,7 @@ bool LyricsProvider::TryLoadSidecarLrc(const QString& p_TrackPath)
 
   Log::Info("Loaded LRC file: %s (%d lines, synced=%d)",
             lrcPath.toStdString().c_str(), lyrics.lines.size(), lyrics.synced);
-  emit LyricsReady(lyrics);
+  EmitLyricsReady(lyrics);
   return true;
 }
 
@@ -208,7 +230,7 @@ bool LyricsProvider::TryLoadEmbeddedLyrics(const QString& p_TrackPath)
           {
             Log::Info("Loaded SYLT lyrics from: %s (%d lines)",
                       p_TrackPath.toStdString().c_str(), lyrics.lines.size());
-            emit LyricsReady(lyrics);
+            EmitLyricsReady(lyrics);
             return true;
           }
         }
@@ -233,7 +255,7 @@ bool LyricsProvider::TryLoadEmbeddedLyrics(const QString& p_TrackPath)
           {
             Log::Info("Loaded USLT lyrics from: %s (%d lines, synced=%d)",
                       p_TrackPath.toStdString().c_str(), lyrics.lines.size(), lyrics.synced);
-            emit LyricsReady(lyrics);
+            EmitLyricsReady(lyrics);
             return true;
           }
         }
@@ -265,7 +287,7 @@ bool LyricsProvider::TryLoadEmbeddedLyrics(const QString& p_TrackPath)
         {
           Log::Info("Loaded embedded lyrics from: %s (%d lines, synced=%d)",
                     p_TrackPath.toStdString().c_str(), lyrics.lines.size(), lyrics.synced);
-          emit LyricsReady(lyrics);
+          EmitLyricsReady(lyrics);
           return true;
         }
       }
@@ -316,7 +338,7 @@ void LyricsProvider::FetchFromLrclibGet(const QString& p_Artist, const QString& 
         {
           Log::Info("Lyrics source 3a/3 (LRCLIB /api/get): matched (%d lines, synced=%d)",
                     lyrics.lines.size(), lyrics.synced);
-          emit LyricsReady(lyrics);
+          EmitLyricsReady(lyrics);
           return;
         }
       }
@@ -416,7 +438,7 @@ void LyricsProvider::FetchFromLrclibSearch(const QString& p_Artist, const QStrin
       {
         Log::Info("Lyrics source 3b/3 (LRCLIB /api/search): matched %d/%d result (%d lines, synced=%d, durDelta=%ds)",
                   bestIdx + 1, (int)arr.size(), lyrics.lines.size(), lyrics.synced, bestDurDelta);
-        emit LyricsReady(lyrics);
+        EmitLyricsReady(lyrics);
         return;
       }
     }

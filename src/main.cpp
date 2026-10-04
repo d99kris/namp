@@ -235,6 +235,7 @@ int main(int argc, char *argv[])
   QObject::connect(&uiKeyhandler, SIGNAL(ToggleCdg()), &cdgWindow, SLOT(ToggleCdg()));
   QObject::connect(&uiKeyhandler, SIGNAL(ToggleFullScreen()), &cdgWindow, SLOT(ToggleFullScreen()));
   QObject::connect(&cdgWindow, SIGNAL(KeyReceived()), &uiKeyhandler, SLOT(ProcessKeyEvent()));
+  QObject::connect(&cdgWindow, SIGNAL(CdgUpdated(bool, bool)), &uiView, SLOT(CdgUpdated(bool, bool)));
 
   // Init lyrics
   LyricsProvider lyricsProvider(&application);
@@ -246,6 +247,9 @@ int main(int argc, char *argv[])
   QObject::connect(&lyricsProvider, SIGNAL(LyricsLoading()), &lyricsWindow, SLOT(LyricsLoading()));
   QObject::connect(&lyricsWindow, SIGNAL(EnabledChanged(bool)), &lyricsProvider, SLOT(SetEnabled(bool)));
   QObject::connect(&lyricsWindow, SIGNAL(EnabledChanged(bool)), &uiView, SLOT(LyricsUpdated(bool)));
+  QObject::connect(&lyricsProvider, SIGNAL(LyricsReady(const LyricsData&)), &uiView, SLOT(SetLyrics(const LyricsData&)));
+  QObject::connect(&lyricsProvider, SIGNAL(LyricsCleared()), &uiView, SLOT(ClearLyrics()));
+  QObject::connect(&lyricsProvider, SIGNAL(LyricsLoading()), &uiView, SLOT(LyricsLoading()));
   uiView.SetLyricsAvailable(true);
   QObject::connect(&audioPlayer, SIGNAL(PositionChanged(qint64)), &lyricsWindow, SLOT(PositionChanged(qint64)));
   QObject::connect(&audioPlayer, SIGNAL(DurationChanged(qint64)), &lyricsWindow, SLOT(DurationChanged(qint64)));
@@ -255,6 +259,10 @@ int main(int argc, char *argv[])
   QObject::connect(&uiKeyhandler, SIGNAL(LyricsZoomOut()), &lyricsWindow, SLOT(ZoomOut()));
   QObject::connect(&uiKeyhandler, SIGNAL(LyricsZoomReset()), &lyricsWindow, SLOT(ZoomReset()));
   QObject::connect(&lyricsWindow, SIGNAL(KeyReceived()), &uiKeyhandler, SLOT(ProcessKeyEvent()));
+
+  // Lyrics window enable / disable (terminal lyrics when disabled)
+  QObject::connect(&uiKeyhandler, SIGNAL(ToggleLyricsWindow()), &uiView, SLOT(ToggleLyricsWindow()));
+  QObject::connect(&uiView, SIGNAL(LyricsWindowEnabledChanged(bool)), &lyricsWindow, SLOT(SetWindowEnabled(bool)));
 #endif
 
   // Apply settings
@@ -272,6 +280,8 @@ int main(int argc, char *argv[])
   bool viewFolders = settings.value("ui/viewfolders", false).toBool();
   uiView.SetViewFolders(viewFolders);
 #ifdef HAS_GUI
+  bool viewLyricsWindow = settings.value("ui/viewlyricswindow", true).toBool();
+  uiView.SetLyricsWindowEnabled(viewLyricsWindow);
   bool viewCdg = settings.value("ui/viewcdg", true).toBool();
   cdgWindow.SetEnabled(viewCdg);
   bool viewLyrics = settings.value("ui/viewlyrics", false).toBool();
@@ -347,6 +357,8 @@ int main(int argc, char *argv[])
   uiView.GetViewFolders(viewFolders);
   settings.setValue("ui/viewfolders", viewFolders);
 #ifdef HAS_GUI
+  uiView.GetLyricsWindowEnabled(viewLyricsWindow);
+  settings.setValue("ui/viewlyricswindow", viewLyricsWindow);
   cdgWindow.GetEnabled(viewCdg);
   settings.setValue("ui/viewcdg", viewCdg);
   lyricsWindow.GetEnabled(viewLyrics);
@@ -412,12 +424,13 @@ static void ShowHelp()
     "   E                 unenqueue selected track\n"
 #ifdef HAS_GUI
     "   f                 toggle fullscreen (lyrics/cdg)\n"
-    "   g                 toggle CDG graphics window\n"
-    "   l                 toggle lyrics window\n"
+    "   k                 toggle CDG karaoke window\n"
+    "   l                 toggle lyrics view\n"
 #endif
     "   s                 toggle shuffle on/off\n"
     "   t                 external tag editor\n"
 #ifdef HAS_GUI
+    "   w                 toggle lyrics window / terminal lyrics\n"
     "   ,                 lyrics font smaller\n"
     "   .                 lyrics font larger\n"
     "   ;                 lyrics font reset\n"

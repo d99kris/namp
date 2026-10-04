@@ -47,6 +47,7 @@ void CdgWindow::TrackChanged(const QString& p_TrackPath)
   m_PacketCount = 0;
   m_ProcessedPackets = 0;
   m_HasCdg = false;
+  m_PositionMs = 0;
   m_Image.fill(Qt::black);
 
   // Look for .cdg sidecar file
@@ -63,6 +64,7 @@ void CdgWindow::TrackChanged(const QString& p_TrackPath)
   {
     hide();
     update();
+    emit CdgUpdated(m_HasCdg, m_Enabled);
     return;
   }
 
@@ -72,6 +74,7 @@ void CdgWindow::TrackChanged(const QString& p_TrackPath)
   {
     Log::Warning("Failed to open CDG file: %s", cdgPath.toStdString().c_str());
     hide();
+    emit CdgUpdated(m_HasCdg, m_Enabled);
     return;
   }
 
@@ -87,13 +90,23 @@ void CdgWindow::TrackChanged(const QString& p_TrackPath)
   {
     show();
   }
+
+  emit CdgUpdated(m_HasCdg, m_Enabled);
 }
 
 void CdgWindow::PositionChanged(qint64 p_PositionMs)
 {
-  if (!m_HasCdg || !isVisible()) return;
+  m_PositionMs = p_PositionMs;
+  if (!isVisible()) return;
 
-  int targetPacket = static_cast<int>(p_PositionMs * 300 / 1000);
+  DecodeToPosition();
+}
+
+void CdgWindow::DecodeToPosition()
+{
+  if (!m_HasCdg) return;
+
+  int targetPacket = static_cast<int>(m_PositionMs * 300 / 1000);
   targetPacket = qBound(0, targetPacket, m_PacketCount);
 
   if (targetPacket < m_ProcessedPackets)
@@ -145,6 +158,8 @@ void CdgWindow::ToggleCdg()
     show();
     raise();
   }
+
+  emit CdgUpdated(m_HasCdg, m_Enabled);
 }
 
 void CdgWindow::ToggleFullScreen()
@@ -209,6 +224,9 @@ void CdgWindow::closeEvent(QCloseEvent* p_Event)
 void CdgWindow::showEvent(QShowEvent* p_Event)
 {
   QWidget::showEvent(p_Event);
+
+  // Packets are not decoded while hidden, so catch up with playback
+  DecodeToPosition();
 #ifdef __APPLE__
   ShowDockIcon();
 #endif

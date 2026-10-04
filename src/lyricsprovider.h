@@ -15,19 +15,7 @@
 #include <QTimer>
 #include <QVector>
 
-struct LyricsLine
-{
-  qint64 timeMs = -1;
-  QString text;
-};
-
-struct LyricsData
-{
-  bool synced = false;
-  QVector<LyricsLine> lines;
-};
-
-Q_DECLARE_METATYPE(LyricsData)
+#include "lyrics.h"
 
 class LyricsProvider : public QObject
 {
@@ -47,6 +35,7 @@ signals:
 
 private:
   void DoLookup();
+  void EmitLyricsReady(const LyricsData& p_Lyrics);
   bool TryLoadSidecarLrc(const QString& p_TrackPath);
   bool TryLoadEmbeddedLyrics(const QString& p_TrackPath);
   void FetchFromLrclibGet(const QString& p_Artist, const QString& p_Title, int p_DurationSec);
@@ -62,6 +51,8 @@ private:
   QNetworkAccessManager* m_NetworkManager = nullptr;
   QString m_CurrentTrackPath;
   QString m_PendingTrackPath;
+  QString m_CachedTrackPath;
+  LyricsData m_CachedLyrics;
   bool m_Enabled = false;
   QTimer m_DebounceTimer;
 };

@@ -49,6 +49,7 @@ signals:
   void ToggleCdg();
   void ToggleLyrics();
   void ToggleFullScreen();
+  void ToggleLyricsWindow();
   void LyricsZoomIn();
   void LyricsZoomOut();
   void LyricsZoomReset();

@@ -31,6 +31,7 @@ public slots:
 
 signals:
   void KeyReceived();
+  void CdgUpdated(bool p_HasCdg, bool p_Enabled);
 
 protected:
   void paintEvent(QPaintEvent* p_Event) override;
@@ -40,12 +41,14 @@ protected:
   void keyPressEvent(QKeyEvent* p_Event) override;
 
 private:
+  void DecodeToPosition();
   void RenderFrame();
 
   CDG m_Decoder;
   QByteArray m_CdgData;
   int m_PacketCount = 0;
   int m_ProcessedPackets = 0;
+  qint64 m_PositionMs = 0;
   QImage m_Image;
   bool m_HasCdg = false;
   bool m_Enabled = true;

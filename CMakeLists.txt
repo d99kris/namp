@@ -34,12 +34,14 @@ set(SOURCES
     src/audioplayer.cpp
     src/main.cpp
     src/log.cpp
+    src/lyrics.cpp
     src/scrobbler.cpp
     src/spectrum.cpp
     src/util.cpp
     src/audioplayer.h
     src/common.h
     src/log.h
+    src/lyrics.h
     src/scrobbler.h
     src/spectrum.h
     src/uikeyhandler.h

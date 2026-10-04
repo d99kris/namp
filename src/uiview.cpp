@@ -13,6 +13,8 @@
 #include <QTimer>
 #include <QVector>
 
+#include <vector>
+
 #include <locale.h>
 #include <signal.h>
 #include <wchar.h>
@@ -31,6 +33,68 @@ static bool s_ShowTrackPath = false;
 static int s_MinTerminalWidth = 40;
 static int s_MinTerminalHeight = 6;
 static int s_SearchWidthPad = 4;
+
+static std::vector<std::wstring> WrapWString(const std::wstring& p_Str, int p_Width)
+{
+  std::vector<std::wstring> rows;
+  std::wstring row;
+  int rowWidth = 0;
+  std::wstring word;
+  auto addWord = [&]()
+  {
+    if (word.empty()) return;
+
+    const int wordWidth = Util::WStringWidth(word);
+    const int candidateWidth = row.empty() ? wordWidth : (rowWidth + 1 + wordWidth);
+    if (candidateWidth <= p_Width)
+    {
+      if (!row.empty()) row += L' ';
+      row += word;
+      rowWidth = candidateWidth;
+      word.clear();
+      return;
+    }
+
+    if (!row.empty())
+    {
+      rows.push_back(row);
+      row.clear();
+    }
+
+    // Hard-split words that are wider than the view
+    while (Util::WStringWidth(word) > p_Width)
+    {
+      std::wstring part = Util::TrimPadWString(word, p_Width);
+      if (part.empty()) part = word.substr(0, 1);
+      rows.push_back(part);
+      word = word.substr(part.size());
+    }
+
+    row = word;
+    rowWidth = Util::WStringWidth(word);
+    word.clear();
+  };
+
+  for (wchar_t ch : p_Str)
+  {
+    if ((ch == L' ') || (ch == L'\t'))
+    {
+      addWord();
+    }
+    else
+    {
+      word += ch;
+    }
+  }
+  addWord();
+
+  if (!row.empty() || rows.empty())
+  {
+    rows.push_back(row);
+  }
+
+  return rows;
+}
 
 UIView::UIView(QObject *p_Parent, Scrobbler* p_Scrobbler)
   : QObject(p_Parent)
@@ -90,6 +154,7 @@ void UIView::PlaylistUpdated(const QVector<QString>& p_Paths)
 void UIView::PositionChanged(qint64 p_Position)
 {
   m_TrackPositionSec = p_Position / 1000;
+  m_TrackPositionMs = p_Position;
   Refresh();
 
   if (m_Scrobbler && (m_TrackDurationSec > 0) && (m_PlaylistPosition < m_Playlist.count()))
@@ -122,6 +187,15 @@ void UIView::PositionChanged(qint64 p_Position)
 void UIView::DurationChanged(qint64 p_Position)
 {
   m_TrackDurationSec = p_Position / 1000;
+  m_TrackDurationMs = p_Position;
+
+  // If plain lyrics arrived before the duration was known, synthesize
+  // timestamps now so they scroll along with playback.
+  if (!m_Lyrics.synced && Lyrics::AssignSyntheticTimestamps(m_Lyrics, m_TrackDurationMs))
+  {
+    m_LyricsSynthetic = true;
+  }
+
   Refresh();
 }
 
@@ -162,18 +236,36 @@ void UIView::Search()
 
 void UIView::SelectPrevious()
 {
+  if (IsLyricsViewActive())
+  {
+    SetLyricsScrollRow(m_LyricsScrollRow - 1);
+    return;
+  }
+
   SetPlaylistSelected((m_PlaylistSelected - 1), true);
   Refresh();
 }
 
 void UIView::SelectNext()
 {
+  if (IsLyricsViewActive())
+  {
+    SetLyricsScrollRow(m_LyricsScrollRow + 1);
+    return;
+  }
+
   SetPlaylistSelected((m_PlaylistSelected + 1), true);
   Refresh();
 }
 
 void UIView::PagePrevious()
 {
+  if (IsLyricsViewActive())
+  {
+    SetLyricsScrollRow(m_LyricsScrollRow - (m_PlaylistWindowHeight - 2));
+    return;
+  }
+
   int pageSize = m_ViewFolders ? VisibleTrackCount() : (m_PlaylistWindowHeight - 2);
   SetPlaylistSelected((m_PlaylistSelected - pageSize), true);
   Refresh();
@@ -181,6 +273,12 @@ void UIView::PagePrevious()
 
 void UIView::PageNext()
 {
+  if (IsLyricsViewActive())
+  {
+    SetLyricsScrollRow(m_LyricsScrollRow + (m_PlaylistWindowHeight - 2));
+    return;
+  }
+
   int pageSize = m_ViewFolders ? VisibleTrackCount() : (m_PlaylistWindowHeight - 2);
   SetPlaylistSelected((m_PlaylistSelected + pageSize), true);
   Refresh();
@@ -188,18 +286,33 @@ void UIView::PageNext()
 
 void UIView::Home()
 {
+  if (IsLyricsViewActive())
+  {
+    SetLyricsScrollRow(0);
+    return;
+  }
+
   SetPlaylistSelected(0, true);
   Refresh();
 }
 
 void UIView::End()
 {
+  if (IsLyricsViewActive())
+  {
+    SetLyricsScrollRow(m_LyricsScrollMax);
+    return;
+  }
+
   SetPlaylistSelected((m_Playlist.count() - 1), true);
   Refresh();
 }
 
 void UIView::PlaySelected()
 {
+  // Playlist selection is not visible in lyrics view
+  if (IsLyricsViewActive()) return;
+
   emit SetCurrentIndex(m_PlaylistSelected);
   emit Play();
 }
@@ -331,6 +444,8 @@ void UIView::CreateWindows()
     m_PlaylistWindow = NULL;
   }
 
+  UpdateLyricsWindowVisible();
+
   m_TitleWidth = m_PlayerWindowWidth - 13;;
   m_VolumeWidth = m_PlayerWindowWidth - 15;
   m_PositionWidth = m_PlayerWindowWidth - 6;
@@ -407,12 +522,20 @@ void UIView::DrawPlayer()
     mvwprintw(m_PlayerWindow, 4, xpos, "[%c] Shuffle", m_Shuffle ? 'X' : ' ');
     xpos += 11;
 
-    // Lyrics toggle (when available and fits in window, with trailing space margin)
+    // Lyrics toggle, or karaoke toggle for CDG tracks (when available and
+    // fits in window, with trailing space margin)
     m_LyricsX = -1;
-    if (m_LyricsAvailable && (xpos + 14 <= m_PlayerWindowWidth))
+    if (m_LyricsAvailable && (xpos + 15 <= m_PlayerWindowWidth))
     {
       m_LyricsX = xpos + 2;
-      mvwprintw(m_PlayerWindow, 4, xpos, "  [%c] Lyrics", m_LyricsEnabled ? 'X' : ' ');
+      if (m_CdgTrack)
+      {
+        mvwprintw(m_PlayerWindow, 4, xpos, "  [%c] Karaoke", m_CdgEnabled ? 'X' : ' ');
+      }
+      else
+      {
+        mvwprintw(m_PlayerWindow, 4, xpos, "  [%c] Lyrics ", m_LyricsEnabled ? 'X' : ' ');
+      }
     }
 
     // Refresh
@@ -569,6 +692,12 @@ void UIView::KeyPress(int p_Key) // can move this to other slots later.
 
 void UIView::DrawPlaylist()
 {
+  if ((m_PlaylistWindow != NULL) && IsLyricsViewActive())
+  {
+    DrawLyrics();
+    return;
+  }
+
   if (m_PlaylistWindow != NULL)
   {
     // Border
@@ -756,11 +885,12 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
     // Shuffle
     else if ((p_Y == 4) && (p_X >= m_ShuffleX) && (p_X <= m_ShuffleX + 2)) emit ProcessMouseEvent(UIMouseEvent(UIELEM_SHUFFLE, 0));
 
-    // Lyrics
-    else if ((m_LyricsX >= 0) && (p_Y == 4) && (p_X >= m_LyricsX) && (p_X <= m_LyricsX + 2)) emit ProcessMouseEvent(UIMouseEvent(UIELEM_LYRICS, 0));
+    // Lyrics / Karaoke
+    else if ((m_LyricsX >= 0) && (p_Y == 4) && (p_X >= m_LyricsX) && (p_X <= m_LyricsX + 2)) emit ProcessMouseEvent(UIMouseEvent(m_CdgTrack ? UIELEM_KARAOKE : UIELEM_LYRICS, 0));
 
     // Playlist
-    else if ((p_Y > m_PlaylistWindowY) && (p_Y < (m_PlaylistWindowY + m_PlaylistWindowHeight)) &&
+    else if (!IsLyricsViewActive() &&
+             (p_Y > m_PlaylistWindowY) && (p_Y < (m_PlaylistWindowY + m_PlaylistWindowHeight)) &&
              (p_X > (m_PlaylistWindowX + 1)) && (p_X < (m_PlaylistWindowX + m_PlaylistWindowWidth - 1)))
     {
       int clickedIndex = ScreenRowToTrackIndex(p_Y - m_PlaylistWindowY - 1);
@@ -776,7 +906,8 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
   if (p_Button & BUTTON1_DOUBLE_CLICKED)
   {
     // Playlist
-    if ((p_Y > m_PlaylistWindowY) && (p_Y < (m_PlaylistWindowY + m_PlaylistWindowHeight)) &&
+    if (!IsLyricsViewActive() &&
+        (p_Y > m_PlaylistWindowY) && (p_Y < (m_PlaylistWindowY + m_PlaylistWindowHeight)) &&
         (p_X > (m_PlaylistWindowX + 1)) && (p_X < (m_PlaylistWindowX + m_PlaylistWindowWidth - 1)))
     {
       int clickedIndex = ScreenRowToTrackIndex(p_Y - m_PlaylistWindowY - 1);
@@ -801,7 +932,7 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
     {
       emit ProcessMouseEvent(UIMouseEvent(UIELEM_VOLUMEDOWN, 0));
     }
-    else
+    else if (!IsLyricsViewActive())
     {
       SetPlaylistSelected((qBound(0, m_PlaylistSelected + 1, m_Playlist.count() - 1)), true);
       Refresh();
@@ -819,7 +950,7 @@ void UIView::MouseEventRequest(int p_X, int p_Y, uint32_t p_Button)
     {
       emit ProcessMouseEvent(UIMouseEvent(UIELEM_VOLUMEUP, 0));
     }
-    else
+    else if (!IsLyricsViewActive())
     {
       SetPlaylistSelected((qBound(0, m_PlaylistSelected - 1, m_Playlist.count() - 1)), true);
       Refresh();
@@ -1071,6 +1202,208 @@ void UIView::LyricsUpdated(bool p_Enabled)
   Refresh();
 }
 
+void UIView::CdgUpdated(bool p_HasCdg, bool p_Enabled)
+{
+  m_CdgTrack = p_HasCdg;
+  m_CdgEnabled = p_Enabled;
+  Refresh();
+}
+
+void UIView::SetLyrics(const LyricsData& p_Lyrics)
+{
+  m_LyricsScrollRow = 0;
+  m_LyricsRowsWidth = -1;
+  m_Lyrics = p_Lyrics;
+  m_LyricsIsLoading = false;
+  m_LyricsSynthetic = false;
+
+  // Plain lyrics are spread across the track duration (when known)
+  if (!m_Lyrics.synced && Lyrics::AssignSyntheticTimestamps(m_Lyrics, m_TrackDurationMs))
+  {
+    m_LyricsSynthetic = true;
+  }
+
+  Refresh();
+}
+
+void UIView::ClearLyrics()
+{
+  m_LyricsScrollRow = 0;
+  m_LyricsRowsWidth = -1;
+  m_Lyrics = LyricsData();
+  m_LyricsIsLoading = false;
+  m_LyricsSynthetic = false;
+  Refresh();
+}
+
+void UIView::LyricsLoading()
+{
+  m_LyricsScrollRow = 0;
+  m_LyricsRowsWidth = -1;
+  m_Lyrics = LyricsData();
+  m_LyricsIsLoading = true;
+  m_LyricsSynthetic = false;
+  Refresh();
+}
+
+void UIView::GetLyricsWindowEnabled(bool& p_LyricsWindowEnabled)
+{
+  p_LyricsWindowEnabled = m_LyricsWindowEnabled;
+}
+
+void UIView::SetLyricsWindowEnabled(const bool& p_LyricsWindowEnabled)
+{
+  m_LyricsWindowEnabled = p_LyricsWindowEnabled;
+  UpdateLyricsWindowVisible();
+}
+
+void UIView::UpdateLyricsWindowVisible()
+{
+  // Keep lyrics window visible when the terminal is too small to show the
+  // playlist window, as terminal lyrics would not be displayed anywhere.
+  const bool lyricsWindowVisible = m_LyricsWindowEnabled || (m_PlaylistWindow == NULL);
+  if (lyricsWindowVisible == m_LyricsWindowVisible) return;
+
+  m_LyricsWindowVisible = lyricsWindowVisible;
+  emit LyricsWindowEnabledChanged(m_LyricsWindowVisible);
+}
+
+void UIView::SetLyricsScrollRow(int p_Row)
+{
+  // Manual scrolling only applies to lyrics without (synthetic) timestamps,
+  // i.e. when track duration is unknown
+  if (m_Lyrics.synced) return;
+
+  m_LyricsScrollRow = qBound(0, p_Row, m_LyricsScrollMax);
+  Refresh();
+}
+
+void UIView::ToggleLyricsWindow()
+{
+  SetLyricsWindowEnabled(!m_LyricsWindowEnabled);
+  Refresh();
+}
+
+bool UIView::IsLyricsViewActive() const
+{
+  // Lyrics are not shown for CDG tracks, which use karaoke instead
+  return m_LyricsAvailable && m_LyricsEnabled && !m_LyricsWindowVisible && !m_CdgTrack &&
+    (m_UIState & (UISTATE_PLAYER | UISTATE_PLAYLIST));
+}
+
+void UIView::DrawLyrics()
+{
+  // Border and title
+  wborder(m_PlaylistWindow, 0, 0, 0, 0, 0, 0, 0, 0);
+  const int titleAttributes = (m_UIState & UISTATE_PLAYLIST) ? A_BOLD : A_NORMAL;
+  wattron(m_PlaylistWindow, titleAttributes);
+  const int titlePos = (m_PlaylistWindowWidth - 8) / 2;
+  mvwprintw(m_PlaylistWindow, 0, titlePos, " lyrics ");
+  wattroff(m_PlaylistWindow, titleAttributes);
+
+  const int viewMax = m_PlaylistWindowHeight - 2;
+  const int viewLength = m_PlaylistWindowWidth - 4;
+
+  UpdateLyricsRows(viewLength);
+  const std::vector<std::wstring>& rows = m_LyricsRows;
+  const std::vector<int>& rowLines = m_LyricsRowLines;
+
+  int currentLine = -1;
+  int topRow = 0;
+  if (m_Lyrics.lines.isEmpty())
+  {
+    topRow = (viewMax - 1) / 2;
+  }
+  else
+  {
+    if (m_Lyrics.synced)
+    {
+      currentLine = Lyrics::FindCurrentLine(m_Lyrics, m_TrackPositionMs);
+
+      // Anchor current line at center for timestamped lyrics, and higher up for
+      // synthetic timestamps so that more of the upcoming lyrics are visible
+      const int anchorRow = m_LyricsSynthetic ? ((viewMax * 3) / 10) : ((viewMax - 1) / 2);
+      if (currentLine >= 0)
+      {
+        const int currentFirstRow = m_LyricsLineFirstRow.at(currentLine);
+        const int currentRowCount = m_LyricsLineFirstRow.at(currentLine + 1) - currentFirstRow;
+        topRow = anchorRow - currentFirstRow - ((currentRowCount - 1) / 2);
+      }
+      else
+      {
+        topRow = anchorRow;
+      }
+    }
+    else
+    {
+      m_LyricsScrollMax = qMax(0, (int)rows.size() - viewMax);
+      m_LyricsScrollRow = qBound(0, m_LyricsScrollRow, m_LyricsScrollMax);
+      topRow = -m_LyricsScrollRow;
+    }
+  }
+
+  // Draw rows centered horizontally, dim past lines and bold current line
+  const bool highlight = m_Lyrics.synced && !m_LyricsSynthetic && (currentLine >= 0);
+  for (int i = 0; i < viewMax; ++i)
+  {
+    std::wstring spaces(viewLength, L' ');
+    mvwaddnwstr(m_PlaylistWindow, i + 1, 2, spaces.c_str(), spaces.size());
+
+    const int rowIndex = i - topRow;
+    if ((rowIndex < 0) || (rowIndex >= (int)rows.size())) continue;
+
+    const int line = rowLines.at(rowIndex);
+    int attributes = A_NORMAL;
+    if (line < 0)
+    {
+      attributes = A_DIM;
+    }
+    else if (highlight)
+    {
+      attributes = (line == currentLine) ? A_BOLD : ((line < currentLine) ? A_DIM : A_NORMAL);
+    }
+
+    const std::wstring& row = rows.at(rowIndex);
+    const int x = 2 + qMax(0, (viewLength - Util::WStringWidth(row)) / 2);
+    wattron(m_PlaylistWindow, attributes);
+    mvwaddnwstr(m_PlaylistWindow, i + 1, x, row.c_str(), row.size());
+    wattroff(m_PlaylistWindow, attributes);
+  }
+
+  // Refresh
+  wrefresh(m_PlaylistWindow);
+}
+
+void UIView::UpdateLyricsRows(int p_Width)
+{
+  if (p_Width == m_LyricsRowsWidth) return;
+
+  // Wrap lyrics lines into view rows, tracking which lyrics line each row
+  // belongs to, and the first row of each lyrics line
+  m_LyricsRowsWidth = p_Width;
+  m_LyricsRows.clear();
+  m_LyricsRowLines.clear();
+  m_LyricsLineFirstRow.clear();
+  if (m_Lyrics.lines.isEmpty())
+  {
+    m_LyricsRows.push_back(Util::ToWString(m_LyricsIsLoading ? "loading lyrics..." : "no lyrics found"));
+    m_LyricsRowLines.push_back(-1);
+    return;
+  }
+
+  for (int i = 0; i < m_Lyrics.lines.size(); ++i)
+  {
+    m_LyricsLineFirstRow.push_back(m_LyricsRows.size());
+    std::vector<std::wstring> lineRows = WrapWString(Util::ToWString(m_Lyrics.lines.at(i).text.toStdString()), p_Width);
+    for (const std::wstring& lineRow : lineRows)
+    {
+      m_LyricsRows.push_back(lineRow);
+      m_LyricsRowLines.push_back(i);
+    }
+  }
+  m_LyricsLineFirstRow.push_back(m_LyricsRows.size());
+}
+
 void UIView::ToggleAnalyzer()
 {
   m_ViewAnalyzer = !m_ViewAnalyzer;
@@ -1091,12 +1424,13 @@ void UIView::DrawSpectrumBars()
 
 void UIView::ExternalEdit()
 {
-  emit ExternalEdit(m_PlaylistSelected);
+  // Playlist selection is not visible in lyrics view, so edit current track
+  emit ExternalEdit(IsLyricsViewActive() ? m_PlaylistPosition : m_PlaylistSelected);
 }
 
 void UIView::Enqueue()
 {
-  if (m_UIState & (UISTATE_PLAYER | UISTATE_PLAYLIST))
+  if ((m_UIState & (UISTATE_PLAYER | UISTATE_PLAYLIST)) && !IsLyricsViewActive())
   {
     emit EnqueueTrack(m_PlaylistSelected);
   }
@@ -1104,7 +1438,7 @@ void UIView::Enqueue()
 
 void UIView::Unenqueue()
 {
-  if (m_UIState & (UISTATE_PLAYER | UISTATE_PLAYLIST))
+  if ((m_UIState & (UISTATE_PLAYER | UISTATE_PLAYLIST)) && !IsLyricsViewActive())
   {
     emit UnenqueueTrack(m_PlaylistSelected);
   }

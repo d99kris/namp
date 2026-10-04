@@ -314,6 +314,46 @@ void UIView::LyricsUpdated(bool /*p_Enabled*/)
 {
 }
 
+void UIView::CdgUpdated(bool /*p_HasCdg*/, bool /*p_Enabled*/)
+{
+}
+
+void UIView::SetLyrics(const LyricsData& /*p_Lyrics*/)
+{
+}
+
+void UIView::ClearLyrics()
+{
+}
+
+void UIView::LyricsLoading()
+{
+}
+
+void UIView::GetLyricsWindowEnabled(bool& p_LyricsWindowEnabled)
+{
+  p_LyricsWindowEnabled = m_LyricsWindowEnabled;
+}
+
+void UIView::SetLyricsWindowEnabled(const bool& p_LyricsWindowEnabled)
+{
+  m_LyricsWindowEnabled = p_LyricsWindowEnabled;
+  emit LyricsWindowEnabledChanged(m_LyricsWindowEnabled);
+}
+
+void UIView::ToggleLyricsWindow()
+{
+}
+
+bool UIView::IsLyricsViewActive() const
+{
+  return false;
+}
+
+void UIView::DrawLyrics()
+{
+}
+
 void UIView::ExternalEdit()
 {
 }
