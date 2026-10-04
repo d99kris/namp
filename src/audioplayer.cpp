@@ -503,6 +503,7 @@ void AudioPlayer::OnMediaChanged(bool p_Forward)
   m_MediaPlayer.setMedia(QUrl::fromLocalFile(m_CurrentTrack));
 #endif
   m_MediaPlayer.play();
+  m_Spectrum->SetPaused(false);
 
   if (m_Spectrum->IsRunning())
   {
