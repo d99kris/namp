@@ -584,7 +584,7 @@ QString UIView::GetPlayerTrackName(int p_MaxLength)
   QString trackName;
   if (m_PlaylistPosition < m_Playlist.count())
   {
-    char position[10];
+    char position[16];
     snprintf(position, sizeof(position), "(%d:%02d)", (m_TrackDurationSec / 60), (m_TrackDurationSec % 60));
     trackName = m_Playlist.at(m_PlaylistPosition).name + " " + position;
   }
