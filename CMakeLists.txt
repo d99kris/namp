@@ -115,18 +115,16 @@ if(UNIX AND NOT APPLE)
 endif()
 
 if(APPLE)
-    target_include_directories(${TARGET_NAME} PRIVATE
-        /usr/local/opt/ncurses/include
-        /usr/local/opt/taglib/include/taglib
-        /opt/homebrew/opt/ncurses/include
-        /opt/homebrew/opt/taglib/include/taglib
-    )
-    target_link_directories(${TARGET_NAME} PRIVATE
-        /usr/local/opt/ncurses/lib
-        /usr/local/opt/taglib/lib
-        /opt/homebrew/opt/ncurses/lib
-        /opt/homebrew/opt/taglib/lib
-    )
+    foreach(BREW_PREFIX /usr/local/opt /opt/homebrew/opt)
+        if(EXISTS ${BREW_PREFIX}/ncurses)
+            target_include_directories(${TARGET_NAME} PRIVATE ${BREW_PREFIX}/ncurses/include)
+            target_link_directories(${TARGET_NAME} PRIVATE ${BREW_PREFIX}/ncurses/lib)
+        endif()
+        if(EXISTS ${BREW_PREFIX}/taglib)
+            target_include_directories(${TARGET_NAME} PRIVATE ${BREW_PREFIX}/taglib/include/taglib)
+            target_link_directories(${TARGET_NAME} PRIVATE ${BREW_PREFIX}/taglib/lib)
+        endif()
+    endforeach()
     target_compile_definitions(${TARGET_NAME} PRIVATE _XOPEN_SOURCE_EXTENDED=1)
     target_link_options(${TARGET_NAME} PRIVATE
         "LINKER:-sectcreate,__TEXT,__info_plist,${CMAKE_CURRENT_SOURCE_DIR}/res/InfoNoDock.plist"

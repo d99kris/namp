@@ -9,10 +9,10 @@
 #include "util.h"
 
 #include <algorithm>
-#include <codecvt>
-#include <locale>
 
 #include <ncurses.h>
+
+#include <QString>
 
 bool Util::RunProgram(const std::string& p_Cmd)
 {
@@ -32,32 +32,12 @@ bool Util::RunProgram(const std::string& p_Cmd)
 
 std::string Util::ToString(const std::wstring& p_WStr)
 {
-  try
-  {
-    return std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>{ }.to_bytes(p_WStr);
-  }
-  catch (...)
-  {
-    std::wstring wstr = p_WStr;
-    wstr.erase(std::remove_if(wstr.begin(), wstr.end(), [](wchar_t wch) { return !isascii(wch); }), wstr.end());
-    std::string str = std::string(wstr.begin(), wstr.end());
-    return str;
-  }
+  return QString::fromStdWString(p_WStr).toStdString();
 }
 
 std::wstring Util::ToWString(const std::string& p_Str)
 {
-  try
-  {
-    return std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>{ }.from_bytes(p_Str);
-  }
-  catch (...)
-  {
-    std::string str = p_Str;
-    str.erase(std::remove_if(str.begin(), str.end(), [](unsigned char ch) { return !isascii(ch); }), str.end());
-    std::wstring wstr = std::wstring(str.begin(), str.end());
-    return wstr;
-  }
+  return QString::fromStdString(p_Str).toStdWString();
 }
 
 std::wstring Util::TrimPadWString(const std::wstring& p_Str, int p_Len)
