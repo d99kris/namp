@@ -22,6 +22,15 @@
 #include "lyrics.h"
 #include "scrobbler.h"
 
+enum ScrobbleState
+{
+  SCROBBLESTATE_NONE,
+  SCROBBLESTATE_SKIPPED,
+  SCROBBLESTATE_PLAYING,
+  SCROBBLESTATE_PLAYED,
+  SCROBBLESTATE_FAILED,
+};
+
 struct TrackInfo
 {
   TrackInfo()
@@ -102,6 +111,7 @@ public slots:
 
 private slots:
   void Timer();
+  void ScrobbleResult(int p_Id, bool p_Played, bool p_Success);
 
 signals:
   void UIStateUpdated(UIState);
@@ -207,6 +217,8 @@ private:
 
   bool m_SetPlaying = false;
   bool m_SetPlayed = false;
+  ScrobbleState m_ScrobbleState = SCROBBLESTATE_NONE;
+  int m_ScrobbleId = 0;
   QVector<float> m_SpectrumBands = QVector<float>(8, 0.0f);
 };
 

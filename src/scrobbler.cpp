@@ -55,10 +55,17 @@ void Scrobbler::Connect()
   HttpRequest(ss.str());
 }
 
-void Scrobbler::Playing(const QString& p_Artist, const QString& p_Title, int p_Duration)
+void Scrobbler::Playing(const QString& p_Artist, const QString& p_Title, int p_Duration, int p_Id)
 {
   if (p_Artist.isEmpty() || p_Title.isEmpty())
   {
+    return;
+  }
+
+  if (!m_Connected)
+  {
+    Log::Warning("Scrobbler not connected");
+    emit Result(p_Id, false, false);
     return;
   }
   
@@ -73,13 +80,22 @@ void Scrobbler::Playing(const QString& p_Artist, const QString& p_Title, int p_D
     "&s=" + m_SessionId + "&a=" + stdStrArtist +
     "&t=" + stdStrTitle + "&l=" + std::to_string(p_Duration) + "&b=&n=&m=";
 
-  HttpRequest(m_PlayingUrl, post);  
+  QNetworkReply* reply = HttpRequest(m_PlayingUrl, post);
+  reply->setProperty("scrobbleId", p_Id);
+  reply->setProperty("scrobblePlayed", false);
 }
 
-void Scrobbler::Played(const QString& p_Artist, const QString& p_Title, int p_Duration)
+void Scrobbler::Played(const QString& p_Artist, const QString& p_Title, int p_Duration, int p_Id)
 {
   if (p_Artist.isEmpty() || p_Title.isEmpty())
   {
+    return;
+  }
+
+  if (!m_Connected)
+  {
+    Log::Warning("Scrobbler not connected");
+    emit Result(p_Id, true, false);
     return;
   }
   
@@ -98,7 +114,9 @@ void Scrobbler::Played(const QString& p_Artist, const QString& p_Title, int p_Du
     "&o[0]=P&r[0]=" +
     "&l[0]=" + std::to_string(p_Duration) + "&b[0]=&n[0]=&m[0]=";
 
-  HttpRequest(m_PlayedUrl, post);  
+  QNetworkReply* reply = HttpRequest(m_PlayedUrl, post);
+  reply->setProperty("scrobbleId", p_Id);
+  reply->setProperty("scrobblePlayed", true);
 }
 
 std::string Scrobbler::GetPass()
@@ -129,7 +147,7 @@ std::string Scrobbler::MD5(const std::string& p_Str)
   return md5.toStdString();
 }
 
-void Scrobbler::HttpRequest(const std::string& p_Url, const std::string& p_Post /* = "" */)
+QNetworkReply* Scrobbler::HttpRequest(const std::string& p_Url, const std::string& p_Post /* = "" */)
 {
   QString urlstr = QString::fromStdString(p_Url);
   QUrl url(urlstr);
@@ -139,26 +157,35 @@ void Scrobbler::HttpRequest(const std::string& p_Url, const std::string& p_Post 
     const QByteArray postData(p_Post.c_str(), p_Post.length());
     QNetworkRequest req(url);
     req.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/x-www-form-urlencoded"));
-    m_NetworkManager->post(req, postData);
+    return m_NetworkManager->post(req, postData);
   }
   else
   {
     QNetworkRequest req(url);
-    m_NetworkManager->get(req);
+    return m_NetworkManager->get(req);
   }
 }
 
 void Scrobbler::OnFinished(QNetworkReply* p_Reply)
 {
+  p_Reply->deleteLater();
+
   QUrl url = p_Reply->url();
   std::string surl = url.toString().toStdString();
   QByteArray byteArray = p_Reply->readAll();
   std::string stdString(byteArray.constData(), byteArray.length());
 
+  const bool networkOk = (p_Reply->error() == QNetworkReply::NoError);
+  const std::string networkError = p_Reply->errorString().toStdString();
+
   if (surl.find("http://post.audioscrobbler.com/?hs=true") == 0) // auth
   {
     std::vector<std::string> result = Split(stdString);
-    if (result.size() < 4)
+    if (!networkOk)
+    {
+      Log::Warning("Scrobbler handshake failed %s", networkError.c_str());
+    }
+    else if (result.size() < 4)
     {
       Log::Warning("Unexpected scrobbler response size");
     }
@@ -175,27 +202,25 @@ void Scrobbler::OnFinished(QNetworkReply* p_Reply)
       m_Connected = true;
     }
   }
-  else if (surl.find(m_PlayingUrl) == 0) // playing
+  else if (p_Reply->property("scrobbleId").isValid()) // playing / played
   {
-    if (stdString.find("OK\n") != 0)
+    const int id = p_Reply->property("scrobbleId").toInt();
+    const bool played = p_Reply->property("scrobblePlayed").toBool();
+    const bool success = networkOk && (stdString.find("OK\n") == 0);
+    if (success)
     {
-      Log::Warning("Unexpected scrobbler response %s", stdString.c_str());
+      Log::Debug("%s ok", played ? "Played" : "Playing");
+    }
+    else if (!networkOk)
+    {
+      Log::Warning("Scrobbler request failed %s", networkError.c_str());
     }
     else
     {
-      Log::Debug("Playing ok");
-    }
-  }
-  else if (surl.find(m_PlayedUrl) == 0) // played
-  {
-    if (stdString.find("OK\n") != 0)
-    {
       Log::Warning("Unexpected scrobbler response %s", stdString.c_str());
     }
-    else
-    {
-      Log::Debug("Played ok");
-    }
+
+    emit Result(id, played, success);
   }
   else
   {

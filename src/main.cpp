@@ -436,6 +436,12 @@ static void ShowHelp()
     "   ;                 lyrics font reset\n"
 #endif
     "\n"
+    "Scrobble Indicators:\n"
+    "   _                 now playing sent to last.fm\n"
+    "   ^                 scrobbled to last.fm\n"
+    "   ~                 not scrobbled (missing artist/title tags)\n"
+    "   !                 scrobbling failed\n"
+    "\n"
     "Config Path Linux:\n"
     "   ~/.config/nope/namp.conf\n"
     "\n"

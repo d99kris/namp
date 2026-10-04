@@ -63,6 +63,13 @@ Interactive Commands:
     .                 lyrics font larger
     ;                 lyrics font reset
 
+Scrobble Indicators:
+
+    _                 now playing sent to last.fm
+    ^                 scrobbled to last.fm
+    ~                 not scrobbled (missing artist/title tags)
+    !                 scrobbling failed
+
 Supported Platforms
 ===================
 namp is primarily developed and tested on macOS, but basic functionality should

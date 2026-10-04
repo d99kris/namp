@@ -68,14 +68,14 @@ void UIView::PositionChanged(qint64 p_Position)
     {
       const QString& artist = m_Playlist.at(m_PlaylistPosition).artist;
       const QString& title = m_Playlist.at(m_PlaylistPosition).title;
-      m_Scrobbler->Played(artist, title, m_TrackDurationSec);
+      m_Scrobbler->Played(artist, title, m_TrackDurationSec, m_ScrobbleId);
       m_SetPlayed = true;
     }
     else if (!m_SetPlaying && (elapsedSec >= 3)) // scrobble playing after 3 sec
     {
       const QString& artist = m_Playlist.at(m_PlaylistPosition).artist;
       const QString& title = m_Playlist.at(m_PlaylistPosition).title;
-      m_Scrobbler->Playing(artist, title, m_TrackDurationSec);
+      m_Scrobbler->Playing(artist, title, m_TrackDurationSec, m_ScrobbleId);
       m_SetPlaying = true;
     }
   }
@@ -172,6 +172,10 @@ void UIView::SetUIState(UIState /*p_UIState*/)
 }
 
 void UIView::Timer()
+{
+}
+
+void UIView::ScrobbleResult(int /*p_Id*/, bool /*p_Played*/, bool /*p_Success*/)
 {
 }
 

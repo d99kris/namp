@@ -22,14 +22,17 @@ public:
   ~Scrobbler();
 
   void Connect();
-  void Playing(const QString& p_Artist, const QString& p_Title, int p_Duration);
-  void Played(const QString& p_Artist, const QString& p_Title, int p_Duration);
+  void Playing(const QString& p_Artist, const QString& p_Title, int p_Duration, int p_Id);
+  void Played(const QString& p_Artist, const QString& p_Title, int p_Duration, int p_Id);
 
   static std::string GetPass();
   static std::string MD5(const std::string& p_Str);
 
+signals:
+  void Result(int p_Id, bool p_Played, bool p_Success);
+
 private:
-  void HttpRequest(const std::string& p_Url, const std::string& p_Post = "");
+  QNetworkReply* HttpRequest(const std::string& p_Url, const std::string& p_Post = "");
   std::vector<std::string> Split(const std::string& p_Str, char p_Sep = '\n');
 
 private slots:

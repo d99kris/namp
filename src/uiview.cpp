@@ -120,6 +120,11 @@ UIView::UIView(QObject *p_Parent, Scrobbler* p_Scrobbler)
   connect(m_Timer, &QTimer::timeout, this, &UIView::Timer);
   m_Timer->setInterval(1000);
   m_Timer->start();
+
+  if (m_Scrobbler)
+  {
+    connect(m_Scrobbler, &Scrobbler::Result, this, &UIView::ScrobbleResult);
+  }
 }
 
 UIView::~UIView()
@@ -163,23 +168,33 @@ void UIView::PositionChanged(qint64 p_Position)
     {
       m_SetPlaying = false;
       m_SetPlayed = false;
+      m_ScrobbleState = SCROBBLESTATE_NONE;
+      ++m_ScrobbleId;
       m_PlayTime.restart();
     }
 
-    const qint64 elapsedSec = m_PlayTime.elapsed() / 1000;
-    if (!m_SetPlayed && (elapsedSec >= 10) && (m_TrackPositionSec >= (m_TrackDurationSec / 2))) // scrobble played after 50% (min 10 sec)
+    const TrackInfo& track = m_Playlist.at(m_PlaylistPosition);
+    if (!track.loaded)
     {
-      const QString& artist = m_Playlist.at(m_PlaylistPosition).artist;
-      const QString& title = m_Playlist.at(m_PlaylistPosition).title;
-      m_Scrobbler->Played(artist, title, m_TrackDurationSec);
-      m_SetPlayed = true;
+      // wait for tags to be loaded before deciding whether track can be scrobbled
     }
-    else if (!m_SetPlaying && (elapsedSec >= 3)) // scrobble playing after 3 sec
+    else if (track.artist.isEmpty() || track.title.isEmpty())
     {
-      const QString& artist = m_Playlist.at(m_PlaylistPosition).artist;
-      const QString& title = m_Playlist.at(m_PlaylistPosition).title;
-      m_Scrobbler->Playing(artist, title, m_TrackDurationSec);
-      m_SetPlaying = true;
+      m_ScrobbleState = SCROBBLESTATE_SKIPPED;
+    }
+    else
+    {
+      const qint64 elapsedSec = m_PlayTime.elapsed() / 1000;
+      if (!m_SetPlayed && (elapsedSec >= 10) && (m_TrackPositionSec >= (m_TrackDurationSec / 2))) // scrobble played after 50% (min 10 sec)
+      {
+        m_SetPlayed = true;
+        m_Scrobbler->Played(track.artist, track.title, m_TrackDurationSec, m_ScrobbleId);
+      }
+      else if (!m_SetPlaying && (elapsedSec >= 3)) // scrobble playing after 3 sec
+      {
+        m_SetPlaying = true;
+        m_Scrobbler->Playing(track.artist, track.title, m_TrackDurationSec, m_ScrobbleId);
+      }
     }
   }
 }
@@ -360,6 +375,23 @@ void UIView::Timer()
   Refresh();
 }
 
+void UIView::ScrobbleResult(int p_Id, bool p_Played, bool p_Success)
+{
+  // ignore late results for a previous track
+  if (p_Id != m_ScrobbleId) return;
+
+  if (!p_Success)
+  {
+    m_ScrobbleState = SCROBBLESTATE_FAILED;
+  }
+  else
+  {
+    m_ScrobbleState = p_Played ? SCROBBLESTATE_PLAYED : SCROBBLESTATE_PLAYING;
+  }
+
+  Refresh();
+}
+
 void UIView::Refresh()
 {
   UpdateScreen();
@@ -509,10 +541,14 @@ void UIView::DrawPlayer()
     if (m_Scrobbler)
     {
       char state = ' ';
-      if (m_SetPlayed)
-        state = '^';
-      else if (m_SetPlaying)
-        state = '_';
+      switch (m_ScrobbleState)
+      {
+        case SCROBBLESTATE_SKIPPED: state = '~'; break;
+        case SCROBBLESTATE_PLAYING: state = '_'; break;
+        case SCROBBLESTATE_PLAYED: state = '^'; break;
+        case SCROBBLESTATE_FAILED: state = '!'; break;
+        default: break;
+      }
       mvwprintw(m_PlayerWindow, 4, xpos, "%c  ", state);
       xpos += 3;
     }
@@ -970,6 +1006,11 @@ void UIView::LoadTracksData()
     const int index = (m_PlaylistOffset + i) % m_Playlist.count();
     if (!m_Playlist[index].loaded)
     {
+      // reset to defaults, so stale data is not kept if tags were removed
+      m_Playlist[index].artist.clear();
+      m_Playlist[index].title.clear();
+      m_Playlist[index].name = QFileInfo(m_Playlist[index].path).completeBaseName();
+
       TagLib::FileRef fileRef(m_Playlist[index].path.toStdString().c_str());
       if (!fileRef.isNull() && (fileRef.tag() != NULL))
       {
@@ -1004,6 +1045,8 @@ void UIView::RefreshTrackData(int p_TrackIndex)
   {
     m_SetPlaying = false;
     m_SetPlayed = false;
+    m_ScrobbleState = SCROBBLESTATE_NONE;
+    ++m_ScrobbleId;
   }
 
   UpdateScreen(true /*p_Force*/);
