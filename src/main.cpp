@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
   uiView.SetScrollTitle(scrollTitle);
   bool viewPosition = settings.value("ui/viewposition", true).toBool();
   uiView.SetViewPosition(viewPosition);
-  bool viewAnalyzer = settings.value("ui/viewanalyzer", false).toBool();
+  bool viewAnalyzer = settings.value("ui/viewanalyzer", true).toBool();
   uiView.SetViewAnalyzer(viewAnalyzer);
   bool viewFolders = settings.value("ui/viewfolders", false).toBool();
   uiView.SetViewFolders(viewFolders);
