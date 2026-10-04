@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
   bool viewFolders = settings.value("ui/viewfolders", false).toBool();
   uiView.SetViewFolders(viewFolders);
 #ifdef HAS_GUI
-  bool viewLyricsWindow = settings.value("ui/viewlyricswindow", true).toBool();
+  bool viewLyricsWindow = settings.value("ui/viewlyricswindow", false).toBool();
   uiView.SetLyricsWindowEnabled(viewLyricsWindow);
   bool viewCdg = settings.value("ui/viewcdg", true).toBool();
   cdgWindow.SetEnabled(viewCdg);
