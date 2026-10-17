@@ -245,11 +245,14 @@ int main(int argc, char *argv[])
   QObject::connect(&lyricsProvider, SIGNAL(LyricsReady(const LyricsData&)), &lyricsWindow, SLOT(SetLyrics(const LyricsData&)));
   QObject::connect(&lyricsProvider, SIGNAL(LyricsCleared()), &lyricsWindow, SLOT(ClearLyrics()));
   QObject::connect(&lyricsProvider, SIGNAL(LyricsLoading()), &lyricsWindow, SLOT(LyricsLoading()));
+  QObject::connect(&lyricsProvider, SIGNAL(LyricsServiceBusy()), &lyricsWindow, SLOT(ClearLyrics()));
   QObject::connect(&lyricsWindow, SIGNAL(EnabledChanged(bool)), &lyricsProvider, SLOT(SetEnabled(bool)));
   QObject::connect(&lyricsWindow, SIGNAL(EnabledChanged(bool)), &uiView, SLOT(LyricsUpdated(bool)));
   QObject::connect(&lyricsProvider, SIGNAL(LyricsReady(const LyricsData&)), &uiView, SLOT(SetLyrics(const LyricsData&)));
   QObject::connect(&lyricsProvider, SIGNAL(LyricsCleared()), &uiView, SLOT(ClearLyrics()));
   QObject::connect(&lyricsProvider, SIGNAL(LyricsLoading()), &uiView, SLOT(LyricsLoading()));
+  QObject::connect(&lyricsProvider, SIGNAL(LyricsRetrying(int, int)), &uiView, SLOT(LyricsRetrying(int, int)));
+  QObject::connect(&lyricsProvider, SIGNAL(LyricsServiceBusy()), &uiView, SLOT(LyricsServiceBusy()));
   uiView.SetLyricsAvailable(true);
   QObject::connect(&audioPlayer, SIGNAL(PositionChanged(qint64)), &lyricsWindow, SLOT(PositionChanged(qint64)));
   QObject::connect(&audioPlayer, SIGNAL(DurationChanged(qint64)), &lyricsWindow, SLOT(DurationChanged(qint64)));

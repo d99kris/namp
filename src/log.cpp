@@ -18,7 +18,8 @@ std::mutex Log::m_Mutex;
 void Log::SetPath(const std::string &p_Path)
 {
   m_Path = p_Path;
-  remove(m_Path.c_str());
+  // Keep previous session log, to help troubleshoot issues not reproducible after restart
+  rename(m_Path.c_str(), (m_Path + ".1").c_str());
 }
 
 void Log::SetDebugEnabled(bool p_DebugEnabled)

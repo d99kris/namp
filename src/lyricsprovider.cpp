@@ -10,6 +10,7 @@
 #include <climits>
 #include <cstdlib>
 
+#include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -36,6 +37,24 @@
 #include "version.h"
 
 static const int s_DebounceMs = 1000;
+static const int s_RetryDelaysSec[] = { 3, 5, 8 };
+static const int s_MaxRetries = sizeof(s_RetryDelaysSec) / sizeof(s_RetryDelaysSec[0]);
+
+// LRCLIB replies 503 when overloaded, and 429 when rate limiting
+static bool IsServiceBusy(int p_HttpStatus)
+{
+  return (p_HttpStatus == 503) || (p_HttpStatus == 429);
+}
+
+// Short single-line excerpt of a reply body for logging
+static std::string BodySnippet(const QByteArray& p_Data)
+{
+  static const int maxLen = 200;
+  QString snippet = QString::fromUtf8(p_Data.left(maxLen)).simplified();
+  if (p_Data.size() > maxLen)
+    snippet += "...";
+  return snippet.toStdString();
+}
 
 LyricsProvider::LyricsProvider(QObject* p_Parent)
   : QObject(p_Parent)
@@ -43,16 +62,23 @@ LyricsProvider::LyricsProvider(QObject* p_Parent)
 {
   m_DebounceTimer.setSingleShot(true);
   connect(&m_DebounceTimer, &QTimer::timeout, this, &LyricsProvider::DoLookup);
+  m_RetryTimer.setSingleShot(true);
+  connect(&m_RetryTimer, &QTimer::timeout, this, &LyricsProvider::DoLookup);
 }
 
 void LyricsProvider::TrackChanged(const QString& p_TrackPath)
 {
+  Log::Info("Lyrics track changed: %s (enabled=%d)", p_TrackPath.toStdString().c_str(), m_Enabled);
   m_PendingTrackPath = p_TrackPath;
 
   // Any track change (or refresh of the current track after a tag edit)
   // invalidates cached lyrics.
   m_CachedTrackPath.clear();
   m_CachedLyrics = LyricsData();
+
+  // Cancel any pending retry of the previous lookup
+  m_RetryTimer.stop();
+  m_RetryCount = 0;
 
   // Skip lookups entirely when the lyrics window is disabled — no point
   // hitting LRCLIB (or parsing tags) if nothing will display the result.
@@ -94,6 +120,7 @@ void LyricsProvider::SetEnabled(bool p_Enabled)
     // Cancel any pending debounce and invalidate in-flight replies
     // (the reply lambdas gate on m_CurrentTrackPath matching).
     m_DebounceTimer.stop();
+    m_RetryTimer.stop();
     m_CurrentTrackPath.clear();
     Log::Info("Lyrics lookup disabled");
     return;
@@ -162,6 +189,22 @@ void LyricsProvider::EmitLyricsReady(const LyricsData& p_Lyrics)
   m_CachedTrackPath = m_CurrentTrackPath;
   m_CachedLyrics = p_Lyrics;
   emit LyricsReady(p_Lyrics);
+}
+
+void LyricsProvider::RetryOrGiveUp()
+{
+  if (m_RetryCount < s_MaxRetries)
+  {
+    const int delaySec = s_RetryDelaysSec[m_RetryCount++];
+    Log::Info("Lyrics source 3/3 (LRCLIB): service busy — retry %d/%d in %ds",
+              m_RetryCount, s_MaxRetries, delaySec);
+    emit LyricsRetrying(m_RetryCount, s_MaxRetries);
+    m_RetryTimer.start(delaySec * 1000);
+    return;
+  }
+
+  Log::Info("Lyrics source 3/3 (LRCLIB): service busy — giving up after %d retries", s_MaxRetries);
+  emit LyricsServiceBusy();
 }
 
 bool LyricsProvider::TryLoadSidecarLrc(const QString& p_TrackPath)
@@ -318,14 +361,23 @@ void LyricsProvider::FetchFromLrclibGet(const QString& p_Artist, const QString& 
 
   QNetworkReply* reply = m_NetworkManager->get(request);
   QString trackPath = m_CurrentTrackPath;
+  QElapsedTimer elapsedTimer;
+  elapsedTimer.start();
 
-  connect(reply, &QNetworkReply::finished, this, [this, reply, trackPath, p_Artist, p_Title, p_DurationSec]()
+  connect(reply, &QNetworkReply::finished, this, [this, reply, trackPath, elapsedTimer, p_Artist, p_Title, p_DurationSec]()
   {
     reply->deleteLater();
 
+    const int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    const qint64 elapsedMs = elapsedTimer.elapsed();
+
     // Ignore if track changed while we were fetching
     if (trackPath != m_CurrentTrackPath)
+    {
+      Log::Info("Lyrics source 3a/3 (LRCLIB /api/get): discarding stale reply (http=%d, %lldms) for: %s",
+                httpStatus, elapsedMs, trackPath.toStdString().c_str());
       return;
+    }
 
     if (reply->error() == QNetworkReply::NoError)
     {
@@ -336,27 +388,29 @@ void LyricsProvider::FetchFromLrclibGet(const QString& p_Artist, const QString& 
         LyricsData lyrics;
         if (ExtractLyricsFromEntry(doc.object(), lyrics))
         {
-          Log::Info("Lyrics source 3a/3 (LRCLIB /api/get): matched (%d lines, synced=%d)",
-                    lyrics.lines.size(), lyrics.synced);
+          Log::Info("Lyrics source 3a/3 (LRCLIB /api/get): matched (%d lines, synced=%d, http=%d, %lldms)",
+                    lyrics.lines.size(), lyrics.synced, httpStatus, elapsedMs);
           EmitLyricsReady(lyrics);
           return;
         }
       }
-      Log::Info("Lyrics source 3a/3 (LRCLIB /api/get): no match — falling back to /api/search");
+      Log::Info("Lyrics source 3a/3 (LRCLIB /api/get): no match (http=%d, %lldms, body='%s') — falling back to /api/search",
+                httpStatus, elapsedMs, BodySnippet(data).c_str());
     }
     else
     {
-      Log::Info("Lyrics source 3a/3 (LRCLIB /api/get): request failed (%s) — falling back to /api/search",
-                reply->errorString().toStdString().c_str());
+      Log::Info("Lyrics source 3a/3 (LRCLIB /api/get): request failed (%s, err=%d, http=%d, %lldms, body='%s') — falling back to /api/search",
+                reply->errorString().toStdString().c_str(), (int)reply->error(), httpStatus, elapsedMs,
+                BodySnippet(reply->readAll()).c_str());
     }
 
     // Fall back to fuzzy search
-    FetchFromLrclibSearch(p_Artist, p_Title, p_DurationSec);
+    FetchFromLrclibSearch(p_Artist, p_Title, p_DurationSec, IsServiceBusy(httpStatus));
   });
 }
 
 void LyricsProvider::FetchFromLrclibSearch(const QString& p_Artist, const QString& p_Title,
-                                           int p_DurationSec)
+                                           int p_DurationSec, bool p_GetBusy)
 {
   QUrl url("https://lrclib.net/api/search");
   QUrlQuery query;
@@ -372,19 +426,33 @@ void LyricsProvider::FetchFromLrclibSearch(const QString& p_Artist, const QStrin
 
   QNetworkReply* reply = m_NetworkManager->get(request);
   QString trackPath = m_CurrentTrackPath;
+  QElapsedTimer elapsedTimer;
+  elapsedTimer.start();
 
-  connect(reply, &QNetworkReply::finished, this, [this, reply, trackPath, p_DurationSec]()
+  connect(reply, &QNetworkReply::finished, this, [this, reply, trackPath, elapsedTimer, p_DurationSec, p_GetBusy]()
   {
     reply->deleteLater();
 
+    const int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    const qint64 elapsedMs = elapsedTimer.elapsed();
+
     if (trackPath != m_CurrentTrackPath)
+    {
+      Log::Info("Lyrics source 3b/3 (LRCLIB /api/search): discarding stale reply (http=%d, %lldms) for: %s",
+                httpStatus, elapsedMs, trackPath.toStdString().c_str());
       return;
+    }
 
     if (reply->error() != QNetworkReply::NoError)
     {
-      Log::Info("Lyrics source 3b/3 (LRCLIB /api/search): request failed (%s) — giving up",
-                reply->errorString().toStdString().c_str());
-      emit LyricsCleared();
+      const bool busy = IsServiceBusy(httpStatus);
+      Log::Info("Lyrics source 3b/3 (LRCLIB /api/search): request failed (%s, err=%d, http=%d, %lldms, body='%s')%s",
+                reply->errorString().toStdString().c_str(), (int)reply->error(), httpStatus, elapsedMs,
+                BodySnippet(reply->readAll()).c_str(), busy ? "" : " — giving up");
+      if (busy)
+        RetryOrGiveUp();
+      else
+        emit LyricsCleared();
       return;
     }
 
@@ -392,7 +460,8 @@ void LyricsProvider::FetchFromLrclibSearch(const QString& p_Artist, const QStrin
     QJsonDocument doc = QJsonDocument::fromJson(data);
     if (!doc.isArray())
     {
-      Log::Info("Lyrics source 3b/3 (LRCLIB /api/search): invalid response — giving up");
+      Log::Info("Lyrics source 3b/3 (LRCLIB /api/search): invalid response (http=%d, %lldms, body='%s') — giving up",
+                httpStatus, elapsedMs, BodySnippet(data).c_str());
       emit LyricsCleared();
       return;
     }
@@ -400,8 +469,13 @@ void LyricsProvider::FetchFromLrclibSearch(const QString& p_Artist, const QStrin
     QJsonArray arr = doc.array();
     if (arr.isEmpty())
     {
-      Log::Info("Lyrics source 3b/3 (LRCLIB /api/search): zero results — giving up");
-      emit LyricsCleared();
+      Log::Info("Lyrics source 3b/3 (LRCLIB /api/search): zero results (http=%d, %lldms)%s",
+                httpStatus, elapsedMs, p_GetBusy ? " — /api/get was busy" : " — giving up");
+      // Search is fuzzy, so only trust "not found" if /api/get answered too
+      if (p_GetBusy)
+        RetryOrGiveUp();
+      else
+        emit LyricsCleared();
       return;
     }
 
@@ -436,16 +510,19 @@ void LyricsProvider::FetchFromLrclibSearch(const QString& p_Artist, const QStrin
       LyricsData lyrics;
       if (ExtractLyricsFromEntry(arr[bestIdx].toObject(), lyrics))
       {
-        Log::Info("Lyrics source 3b/3 (LRCLIB /api/search): matched %d/%d result (%d lines, synced=%d, durDelta=%ds)",
-                  bestIdx + 1, (int)arr.size(), lyrics.lines.size(), lyrics.synced, bestDurDelta);
+        Log::Info("Lyrics source 3b/3 (LRCLIB /api/search): matched %d/%d result (%d lines, synced=%d, durDelta=%ds, http=%d, %lldms)",
+                  bestIdx + 1, (int)arr.size(), lyrics.lines.size(), lyrics.synced, bestDurDelta, httpStatus, elapsedMs);
         EmitLyricsReady(lyrics);
         return;
       }
     }
 
-    Log::Info("Lyrics source 3b/3 (LRCLIB /api/search): %d results but no usable lyrics — giving up",
-              (int)arr.size());
-    emit LyricsCleared();
+    Log::Info("Lyrics source 3b/3 (LRCLIB /api/search): %d results but no usable lyrics%s",
+              (int)arr.size(), p_GetBusy ? " — /api/get was busy" : " — giving up");
+    if (p_GetBusy)
+      RetryOrGiveUp();
+    else
+      emit LyricsCleared();
   });
 }
 

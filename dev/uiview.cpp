@@ -334,6 +334,14 @@ void UIView::LyricsLoading()
 {
 }
 
+void UIView::LyricsRetrying(int /*p_Retry*/, int /*p_MaxRetries*/)
+{
+}
+
+void UIView::LyricsServiceBusy()
+{
+}
+
 void UIView::GetLyricsWindowEnabled(bool& p_LyricsWindowEnabled)
 {
   p_LyricsWindowEnabled = m_LyricsWindowEnabled;

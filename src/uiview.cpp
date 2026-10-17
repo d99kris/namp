@@ -1257,7 +1257,7 @@ void UIView::SetLyrics(const LyricsData& p_Lyrics)
   m_LyricsScrollRow = 0;
   m_LyricsRowsWidth = -1;
   m_Lyrics = p_Lyrics;
-  m_LyricsIsLoading = false;
+  m_LyricsStatus.clear();
   m_LyricsSynthetic = false;
 
   // Plain lyrics are spread across the track duration (when known)
@@ -1271,20 +1271,31 @@ void UIView::SetLyrics(const LyricsData& p_Lyrics)
 
 void UIView::ClearLyrics()
 {
-  m_LyricsScrollRow = 0;
-  m_LyricsRowsWidth = -1;
-  m_Lyrics = LyricsData();
-  m_LyricsIsLoading = false;
-  m_LyricsSynthetic = false;
-  Refresh();
+  ResetLyrics("no lyrics found");
 }
 
 void UIView::LyricsLoading()
 {
+  ResetLyrics("loading lyrics...");
+}
+
+void UIView::LyricsRetrying(int p_Retry, int p_MaxRetries)
+{
+  ResetLyrics("lyrics service busy, retrying (" + std::to_string(p_Retry) + "/" +
+              std::to_string(p_MaxRetries) + ")...");
+}
+
+void UIView::LyricsServiceBusy()
+{
+  ResetLyrics("lyrics service busy, try again later");
+}
+
+void UIView::ResetLyrics(const std::string& p_Status)
+{
   m_LyricsScrollRow = 0;
   m_LyricsRowsWidth = -1;
   m_Lyrics = LyricsData();
-  m_LyricsIsLoading = true;
+  m_LyricsStatus = p_Status;
   m_LyricsSynthetic = false;
   Refresh();
 }
@@ -1429,7 +1440,7 @@ void UIView::UpdateLyricsRows(int p_Width)
   m_LyricsLineFirstRow.clear();
   if (m_Lyrics.lines.isEmpty())
   {
-    m_LyricsRows.push_back(Util::ToWString(m_LyricsIsLoading ? "loading lyrics..." : "no lyrics found"));
+    m_LyricsRows.push_back(Util::ToWString(m_LyricsStatus));
     m_LyricsRowLines.push_back(-1);
     return;
   }

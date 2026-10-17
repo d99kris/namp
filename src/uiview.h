@@ -103,6 +103,8 @@ public slots:
   void SetLyrics(const LyricsData& p_Lyrics);
   void ClearLyrics();
   void LyricsLoading();
+  void LyricsRetrying(int p_Retry, int p_MaxRetries);
+  void LyricsServiceBusy();
   void ToggleLyricsWindow();
   void ExternalEdit();
   void Enqueue();
@@ -139,6 +141,7 @@ private:
   bool IsLyricsViewActive() const;
   void SetLyricsScrollRow(int p_Row);
   void UpdateLyricsWindowVisible();
+  void ResetLyrics(const std::string& p_Status);
   void LoadTracksData();
   void SetPlaylistSelected(int p_SelectedTrack, bool p_UpdateOffset);
   bool NeedsSeparatorBefore(int p_PlaylistIndex) const;
@@ -190,7 +193,7 @@ private:
   bool m_LyricsAvailable = false;
   bool m_CdgTrack = false;
   bool m_CdgEnabled = false;
-  bool m_LyricsIsLoading = false;
+  std::string m_LyricsStatus = "no lyrics found";
   bool m_LyricsSynthetic = false;
   LyricsData m_Lyrics;
   int m_LyricsScrollRow = 0;

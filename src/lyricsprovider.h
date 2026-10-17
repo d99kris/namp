@@ -32,14 +32,18 @@ signals:
   void LyricsReady(const LyricsData& p_Lyrics);
   void LyricsCleared();
   void LyricsLoading();
+  void LyricsRetrying(int p_Retry, int p_MaxRetries);
+  void LyricsServiceBusy();
 
 private:
   void DoLookup();
   void EmitLyricsReady(const LyricsData& p_Lyrics);
+  void RetryOrGiveUp();
   bool TryLoadSidecarLrc(const QString& p_TrackPath);
   bool TryLoadEmbeddedLyrics(const QString& p_TrackPath);
   void FetchFromLrclibGet(const QString& p_Artist, const QString& p_Title, int p_DurationSec);
-  void FetchFromLrclibSearch(const QString& p_Artist, const QString& p_Title, int p_DurationSec);
+  void FetchFromLrclibSearch(const QString& p_Artist, const QString& p_Title, int p_DurationSec,
+                             bool p_GetBusy);
   static bool ExtractLyricsFromEntry(const QJsonObject& p_Entry, LyricsData& p_OutLyrics);
 
   static LyricsData ParseLrc(const QString& p_LrcText);
@@ -55,4 +59,6 @@ private:
   LyricsData m_CachedLyrics;
   bool m_Enabled = false;
   QTimer m_DebounceTimer;
+  QTimer m_RetryTimer;
+  int m_RetryCount = 0;
 };
