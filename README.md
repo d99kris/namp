@@ -11,6 +11,17 @@ For systems which do not have Qt available, a lite version of namp
 
 ![screenshot](/res/namp-screenshot.png)
 
+Features
+--------
+- Play local audio files and entire directories
+- Search playlist and enqueue tracks to play next
+- CD+G karaoke playback using .cdg sidecar files
+- Lyrics from .lrc files, embedded tags or LRCLIB
+- Real-time spectrum analyzer visualization
+- Mouse control and Winamp-style key bindings
+- Edit track tags using external tool idntag
+- Last.fm scrobbling with status indicator
+- Shuffle and sequential playback modes
 
 Usage
 =====
@@ -51,6 +62,7 @@ Interactive Commands:
     pgdn              playlist next page
     ENTER             play selected track
     TAB               toggle main window / playlist focus
+    a                 toggle spectrum analyzer
     d                 toggle show folder names
     e                 enqueue selected track
     E                 unenqueue selected track

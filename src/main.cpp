@@ -449,6 +449,7 @@ static void ShowHelp()
     "   pgdn              playlist next page\n"
     "   ENTER             play selected track\n"
     "   TAB               toggle main window / playlist focus\n"
+    "   a                 toggle spectrum analyzer\n"
     "   d                 toggle show folder names\n"
     "   e                 enqueue selected track\n"
     "   E                 unenqueue selected track\n"
