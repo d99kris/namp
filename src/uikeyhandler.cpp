@@ -164,8 +164,11 @@ void UIKeyhandler::ProcessKeyEvent()
       break;
 
     case 'l':
-    case 'L':
       emit ToggleLyrics();
+      break;
+
+    case 'L':
+      emit RefetchLyrics();
       break;
 
     case 'f':

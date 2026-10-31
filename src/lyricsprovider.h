@@ -26,6 +26,7 @@ public:
 
 public slots:
   void TrackChanged(const QString& p_TrackPath);
+  void RefetchLyrics();
   void SetEnabled(bool p_Enabled);
 
 signals:
@@ -36,14 +37,16 @@ signals:
   void LyricsServiceBusy();
 
 private:
+  void StartLookup(const QString& p_TrackPath, bool p_Refetch);
   void DoLookup();
   void EmitLyricsReady(const LyricsData& p_Lyrics);
   void RetryOrGiveUp();
   bool TryLoadSidecarLrc(const QString& p_TrackPath);
   bool TryLoadEmbeddedLyrics(const QString& p_TrackPath);
+  bool TryLoadCachedLyrics();
   void FetchFromLrclibGet(const QString& p_Artist, const QString& p_Title, int p_DurationSec);
   void FetchFromLrclibSearch(const QString& p_Artist, const QString& p_Title, int p_DurationSec,
-                             bool p_GetBusy);
+                             int p_GetHttpStatus);
   static bool ExtractLyricsFromEntry(const QJsonObject& p_Entry, LyricsData& p_OutLyrics);
 
   static LyricsData ParseLrc(const QString& p_LrcText);
@@ -55,6 +58,9 @@ private:
   QNetworkAccessManager* m_NetworkManager = nullptr;
   QString m_CurrentTrackPath;
   QString m_PendingTrackPath;
+  QString m_Artist;
+  QString m_Title;
+  int m_DurationSec = 0;
   QString m_CachedTrackPath;
   LyricsData m_CachedLyrics;
   bool m_Enabled = false;

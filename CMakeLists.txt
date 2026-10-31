@@ -62,6 +62,8 @@ if(NOT NO_GUI)
         ext/cdgdeck/cdg.h
         src/cdgwindow.cpp
         src/cdgwindow.h
+        src/lyricscache.cpp
+        src/lyricscache.h
         src/lyricsprovider.cpp
         src/lyricsprovider.h
         src/lyricswindow.cpp

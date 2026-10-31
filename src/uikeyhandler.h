@@ -48,6 +48,7 @@ signals:
 #ifdef HAS_GUI
   void ToggleCdg();
   void ToggleLyrics();
+  void RefetchLyrics();
   void ToggleFullScreen();
   void ToggleLyricsWindow();
   void LyricsZoomIn();

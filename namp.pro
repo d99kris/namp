@@ -42,9 +42,11 @@ SOURCES             += dev/uikeyhandler.cpp                    \
                        src/cdgwindow.h
   SOURCES           += ext/cdgdeck/cdg.cpp                     \
                        src/cdgwindow.cpp
-  HEADERS           += src/lyricsprovider.h                    \
+  HEADERS           += src/lyricscache.h                       \
+                       src/lyricsprovider.h                    \
                        src/lyricswindow.h
-  SOURCES           += src/lyricsprovider.cpp                  \
+  SOURCES           += src/lyricscache.cpp                     \
+                       src/lyricsprovider.cpp                  \
                        src/lyricswindow.cpp
   RESOURCES         += res/namp.qrc
   QT                += network

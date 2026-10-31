@@ -21,6 +21,7 @@ Usage:
 
 Command-line Options:
 
+    --clear-cache     clear lyrics cache and exit
     -h, --help        display this help and exit
     -s, --setup       setup last.fm scrobbling account
     -v, --version     output version information and exit
@@ -56,6 +57,7 @@ Interactive Commands:
     f                 toggle fullscreen (lyrics/cdg)
     k                 toggle CDG karaoke window
     l                 toggle lyrics view
+    L                 refetch lyrics (bypass cache)
     s                 toggle shuffle on/off
     t                 external tag editor
     w                 toggle lyrics window / terminal lyrics

@@ -33,6 +33,7 @@
 #include <synchronizedlyricsframe.h>
 
 #include "log.h"
+#include "lyricscache.h"
 #include "lyricsprovider.h"
 #include "version.h"
 
@@ -69,6 +70,19 @@ LyricsProvider::LyricsProvider(QObject* p_Parent)
 void LyricsProvider::TrackChanged(const QString& p_TrackPath)
 {
   Log::Info("Lyrics track changed: %s (enabled=%d)", p_TrackPath.toStdString().c_str(), m_Enabled);
+  StartLookup(p_TrackPath, false /* p_Refetch */);
+}
+
+void LyricsProvider::RefetchLyrics()
+{
+  if (m_PendingTrackPath.isEmpty()) return;
+
+  Log::Info("Lyrics refetch requested: %s (enabled=%d)", m_PendingTrackPath.toStdString().c_str(), m_Enabled);
+  StartLookup(m_PendingTrackPath, true /* p_Refetch */);
+}
+
+void LyricsProvider::StartLookup(const QString& p_TrackPath, bool p_Refetch)
+{
   m_PendingTrackPath = p_TrackPath;
 
   // Any track change (or refresh of the current track after a tag edit)
@@ -91,21 +105,53 @@ void LyricsProvider::TrackChanged(const QString& p_TrackPath)
 
   m_CurrentTrackPath = p_TrackPath;
 
+  // Cancel any pending online lookup of the previous track
+  m_DebounceTimer.stop();
+
+  Log::Info("Lyrics lookup starting for: %s", p_TrackPath.toStdString().c_str());
+
   // If a CDG file exists for this track, clear lyrics immediately — CDG
   // karaoke takes over.
   QFileInfo fileInfo(p_TrackPath);
   QString basePath = fileInfo.path() + "/" + fileInfo.completeBaseName();
   if (QFile::exists(basePath + ".cdg") || QFile::exists(basePath + ".CDG"))
   {
+    Log::Info("Lyrics lookup skipped: CDG sidecar present");
     emit LyricsCleared();
     return;
   }
+
+  // Local sources are cheap, so load them right away without debounce.
+  // Source 1: sidecar .lrc file
+  if (TryLoadSidecarLrc(p_TrackPath))
+    return;
+  Log::Info("Lyrics source 1/3 (sidecar .lrc): no match");
+
+  // Source 2: embedded lyrics in tags
+  if (TryLoadEmbeddedLyrics(p_TrackPath))
+    return;
+  Log::Info("Lyrics source 2/3 (embedded tags): no match");
+
+  // Source 3: LRCLIB, from cache unless refetching, otherwise online
+  m_Artist.clear();
+  m_Title.clear();
+  m_DurationSec = 0;
+  ReadTags(p_TrackPath, m_Artist, m_Title, m_DurationSec);
+  if (m_Artist.isEmpty() || m_Title.isEmpty())
+  {
+    Log::Info("Lyrics source 3/3 (LRCLIB): skipped — missing artist/title tags");
+    emit LyricsCleared();
+    return;
+  }
+
+  if (!p_Refetch && TryLoadCachedLyrics())
+    return;
 
   // Clear stale content but keep the window visible during the lookup —
   // we'll either fill it with new lyrics or hide it once we know.
   emit LyricsLoading();
 
-  // (Re)start debounce — actual lookup happens after the user settles on a
+  // Start debounce — online lookup happens after the user settles on a
   // track for s_DebounceMs.
   m_DebounceTimer.start(s_DebounceMs);
 }
@@ -145,43 +191,9 @@ void LyricsProvider::SetEnabled(bool p_Enabled)
 
 void LyricsProvider::DoLookup()
 {
-  QString trackPath = m_CurrentTrackPath;
-  if (trackPath.isEmpty()) return;
+  if (m_CurrentTrackPath.isEmpty()) return;
 
-  Log::Info("Lyrics lookup starting for: %s", trackPath.toStdString().c_str());
-
-  // CDG takes priority - if .cdg sidecar exists, skip lyrics
-  QFileInfo fileInfo(trackPath);
-  QString basePath = fileInfo.path() + "/" + fileInfo.completeBaseName();
-  if (QFile::exists(basePath + ".cdg") || QFile::exists(basePath + ".CDG"))
-  {
-    Log::Info("Lyrics lookup skipped: CDG sidecar present");
-    emit LyricsCleared();
-    return;
-  }
-
-  // Source 1: sidecar .lrc file
-  if (TryLoadSidecarLrc(trackPath))
-    return;
-  Log::Info("Lyrics source 1/3 (sidecar .lrc): no match");
-
-  // Source 2: embedded lyrics in tags
-  if (TryLoadEmbeddedLyrics(trackPath))
-    return;
-  Log::Info("Lyrics source 2/3 (embedded tags): no match");
-
-  // Source 3: LRCLIB online fetch
-  QString artist, title;
-  int durationSec = 0;
-  ReadTags(trackPath, artist, title, durationSec);
-  if (!artist.isEmpty() && !title.isEmpty())
-  {
-    FetchFromLrclibGet(artist, title, durationSec);
-    return;
-  }
-
-  Log::Info("Lyrics source 3/3 (LRCLIB): skipped — missing artist/title tags");
-  emit LyricsCleared();
+  FetchFromLrclibGet(m_Artist, m_Title, m_DurationSec);
 }
 
 void LyricsProvider::EmitLyricsReady(const LyricsData& p_Lyrics)
@@ -340,6 +352,36 @@ bool LyricsProvider::TryLoadEmbeddedLyrics(const QString& p_TrackPath)
   return false;
 }
 
+bool LyricsProvider::TryLoadCachedLyrics()
+{
+  QJsonObject entry;
+  bool notFound = false;
+  if (!LyricsCache::Lookup(m_Artist, m_Title, m_DurationSec, entry, notFound))
+  {
+    Log::Info("Lyrics source 3/3 (LRCLIB cache): no match");
+    return false;
+  }
+
+  if (notFound)
+  {
+    Log::Info("Lyrics source 3/3 (LRCLIB cache): cached as not found");
+    emit LyricsCleared();
+    return true;
+  }
+
+  LyricsData lyrics;
+  if (!ExtractLyricsFromEntry(entry, lyrics))
+  {
+    Log::Info("Lyrics source 3/3 (LRCLIB cache): no usable lyrics in entry");
+    return false;
+  }
+
+  Log::Info("Lyrics source 3/3 (LRCLIB cache): matched (%d lines, synced=%d)",
+            lyrics.lines.size(), lyrics.synced);
+  EmitLyricsReady(lyrics);
+  return true;
+}
+
 void LyricsProvider::FetchFromLrclibGet(const QString& p_Artist, const QString& p_Title,
                                         int p_DurationSec)
 {
@@ -390,6 +432,7 @@ void LyricsProvider::FetchFromLrclibGet(const QString& p_Artist, const QString& 
         {
           Log::Info("Lyrics source 3a/3 (LRCLIB /api/get): matched (%d lines, synced=%d, http=%d, %lldms)",
                     lyrics.lines.size(), lyrics.synced, httpStatus, elapsedMs);
+          LyricsCache::StoreFound(p_Artist, p_Title, p_DurationSec, doc.object());
           EmitLyricsReady(lyrics);
           return;
         }
@@ -405,13 +448,18 @@ void LyricsProvider::FetchFromLrclibGet(const QString& p_Artist, const QString& 
     }
 
     // Fall back to fuzzy search
-    FetchFromLrclibSearch(p_Artist, p_Title, p_DurationSec, IsServiceBusy(httpStatus));
+    FetchFromLrclibSearch(p_Artist, p_Title, p_DurationSec, httpStatus);
   });
 }
 
 void LyricsProvider::FetchFromLrclibSearch(const QString& p_Artist, const QString& p_Title,
-                                           int p_DurationSec, bool p_GetBusy)
+                                           int p_DurationSec, int p_GetHttpStatus)
 {
+  // Search is fuzzy, so only trust "not found" if /api/get answered too: retry
+  // if it was busy, and only cache "not found" if it answered definitively.
+  const bool getBusy = IsServiceBusy(p_GetHttpStatus);
+  const bool getAnswered = (p_GetHttpStatus == 200) || (p_GetHttpStatus == 404);
+
   QUrl url("https://lrclib.net/api/search");
   QUrlQuery query;
   query.addQueryItem("artist_name", p_Artist);
@@ -429,7 +477,7 @@ void LyricsProvider::FetchFromLrclibSearch(const QString& p_Artist, const QStrin
   QElapsedTimer elapsedTimer;
   elapsedTimer.start();
 
-  connect(reply, &QNetworkReply::finished, this, [this, reply, trackPath, elapsedTimer, p_DurationSec, p_GetBusy]()
+  connect(reply, &QNetworkReply::finished, this, [this, reply, trackPath, elapsedTimer, p_Artist, p_Title, p_DurationSec, getBusy, getAnswered]()
   {
     reply->deleteLater();
 
@@ -470,12 +518,16 @@ void LyricsProvider::FetchFromLrclibSearch(const QString& p_Artist, const QStrin
     if (arr.isEmpty())
     {
       Log::Info("Lyrics source 3b/3 (LRCLIB /api/search): zero results (http=%d, %lldms)%s",
-                httpStatus, elapsedMs, p_GetBusy ? " — /api/get was busy" : " — giving up");
-      // Search is fuzzy, so only trust "not found" if /api/get answered too
-      if (p_GetBusy)
+                httpStatus, elapsedMs, getBusy ? " — /api/get was busy" : " — giving up");
+      if (getBusy)
+      {
         RetryOrGiveUp();
-      else
-        emit LyricsCleared();
+        return;
+      }
+
+      if (getAnswered)
+        LyricsCache::StoreNotFound(p_Artist, p_Title, p_DurationSec);
+      emit LyricsCleared();
       return;
     }
 
@@ -512,17 +564,23 @@ void LyricsProvider::FetchFromLrclibSearch(const QString& p_Artist, const QStrin
       {
         Log::Info("Lyrics source 3b/3 (LRCLIB /api/search): matched %d/%d result (%d lines, synced=%d, durDelta=%ds, http=%d, %lldms)",
                   bestIdx + 1, (int)arr.size(), lyrics.lines.size(), lyrics.synced, bestDurDelta, httpStatus, elapsedMs);
+        LyricsCache::StoreFound(p_Artist, p_Title, p_DurationSec, arr[bestIdx].toObject());
         EmitLyricsReady(lyrics);
         return;
       }
     }
 
     Log::Info("Lyrics source 3b/3 (LRCLIB /api/search): %d results but no usable lyrics%s",
-              (int)arr.size(), p_GetBusy ? " — /api/get was busy" : " — giving up");
-    if (p_GetBusy)
+              (int)arr.size(), getBusy ? " — /api/get was busy" : " — giving up");
+    if (getBusy)
+    {
       RetryOrGiveUp();
-    else
-      emit LyricsCleared();
+      return;
+    }
+
+    if (getAnswered)
+      LyricsCache::StoreNotFound(p_Artist, p_Title, p_DurationSec);
+    emit LyricsCleared();
   });
 }
 

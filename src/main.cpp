@@ -30,6 +30,7 @@
 #include "audioplayer.h"
 #ifdef HAS_GUI
 #include "cdgwindow.h"
+#include "lyricscache.h"
 #include "lyricsprovider.h"
 #include "lyricswindow.h"
 #ifdef __APPLE__
@@ -81,6 +82,7 @@ int main(int argc, char *argv[])
   QStringList arguments = QCoreApplication::arguments();
   arguments.removeAt(0);
   bool setup = false;
+  bool clearCache = false;
   if (arguments.size() == 0)
   {
     ShowHelp();
@@ -100,6 +102,12 @@ int main(int argc, char *argv[])
   {
     setup = true;
   }
+#ifdef HAS_GUI
+  else if ((arguments.size() > 0) && (arguments.at(0) == "--clear-cache"))
+  {
+    clearCache = true;
+  }
+#endif
 
   // Init environment
   InitStdErrRedirect("/dev/null");
@@ -110,6 +118,21 @@ int main(int argc, char *argv[])
   QCoreApplication::setOrganizationName("nope");
   QCoreApplication::setOrganizationDomain("nope.se");
   QSettings settings;
+
+#ifdef HAS_GUI
+  if (clearCache)
+  {
+    const QString cacheDir = LyricsCache::GetDir();
+    if (!LyricsCache::Clear())
+    {
+      std::cerr << "failed to clear lyrics cache " << cacheDir.toStdString() << "\n";
+      return 1;
+    }
+
+    std::cout << "cleared lyrics cache " << cacheDir.toStdString() << "\n";
+    return 0;
+  }
+#endif
 
   Scrobbler* scrobbler = NULL;
 
@@ -242,6 +265,7 @@ int main(int argc, char *argv[])
   LyricsWindow lyricsWindow;
   QObject::connect(&audioPlayer, SIGNAL(TrackChanged(const QString&)), &lyricsProvider, SLOT(TrackChanged(const QString&)));
   QObject::connect(&audioPlayer, SIGNAL(RefreshLyrics(const QString&)), &lyricsProvider, SLOT(TrackChanged(const QString&)));
+  QObject::connect(&uiKeyhandler, SIGNAL(RefetchLyrics()), &lyricsProvider, SLOT(RefetchLyrics()));
   QObject::connect(&lyricsProvider, SIGNAL(LyricsReady(const LyricsData&)), &lyricsWindow, SLOT(SetLyrics(const LyricsData&)));
   QObject::connect(&lyricsProvider, SIGNAL(LyricsCleared()), &lyricsWindow, SLOT(ClearLyrics()));
   QObject::connect(&lyricsProvider, SIGNAL(LyricsLoading()), &lyricsWindow, SLOT(LyricsLoading()));
@@ -395,6 +419,9 @@ static void ShowHelp()
     "   or: namp PATH...\n"
     "\n"
     "Command-line Options:\n"
+#ifdef HAS_GUI
+    "   --clear-cache     clear lyrics cache and exit\n"
+#endif
     "   -h, --help        display this help and exit\n"
     "   -s, --setup       setup last.fm scrobbling account\n"
     "   -v, --version     output version information and exit\n"
@@ -429,6 +456,7 @@ static void ShowHelp()
     "   f                 toggle fullscreen (lyrics/cdg)\n"
     "   k                 toggle CDG karaoke window\n"
     "   l                 toggle lyrics view\n"
+    "   L                 refetch lyrics (bypass cache)\n"
 #endif
     "   s                 toggle shuffle on/off\n"
     "   t                 external tag editor\n"
@@ -451,6 +479,14 @@ static void ShowHelp()
     "Config Path macOS:\n"
     "   ~/Library/Preferences/se.nope.namp.plist\n"
     "\n"
+#ifdef HAS_GUI
+    "Cache Path Linux:\n"
+    "   ~/.cache/nope/namp/\n"
+    "\n"
+    "Cache Path macOS:\n"
+    "   ~/Library/Caches/nope/namp/\n"
+    "\n"
+#endif
     "Report bugs at https://github.com/d99kris/namp/\n"
     "\n"
     ;
