@@ -22,6 +22,7 @@ Features
 - Edit track tags using external tool idntag
 - Last.fm scrobbling with status indicator
 - Shuffle and sequential playback modes
+- Customizable color themes
 
 Usage
 =====
@@ -83,6 +84,80 @@ Scrobble Indicators:
     ^                 scrobbled to last.fm
     ~                 not scrobbled (missing artist/title tags)
     !                 scrobbling failed
+
+Themes
+======
+The colors of namp can be customized in `color.conf`, located at:
+
+    ~/.config/nope/namp/color.conf                (Linux)
+    ~/Library/Preferences/nope/namp/color.conf    (macOS)
+
+The file is created with default values (the classic namp look using terminal
+default colors) the first time namp is started. Theme examples are available
+in the source package under the themes directory, and can be used by copying
+to `color.conf` while namp is not running:
+
+    default
+    pastel-blue
+
+Example installing `pastel-blue` theme on macOS:
+
+    cp themes/pastel-blue.conf ~/Library/Preferences/nope/namp/color.conf
+
+Each UI element has three settings, `<element>_attr`, `<element>_color_bg`
+and `<element>_color_fg`. Elements:
+
+    default            base colors (no _attr)
+    border             window frame
+    border_focus       window frame of focused window
+    title              window title
+    title_focus        window title of focused window
+    position           elapsed time
+    track              current track title
+    spectrum           spectrum analyzer bars
+    spectrum_peak      spectrum analyzer bars from spectrum_peak_level
+                       (falls back to spectrum)
+    volume             volume bar filled part
+    volume_rail        volume bar unfilled part (see bar_rail_char)
+    progress           progress bar filled part
+    progress_rail      progress bar unfilled part (see bar_rail_char)
+    controls           playback controls, bar ends and toggle labels
+    toggle             shuffle / lyrics toggle mark (falls back to controls)
+    scrobble           scrobble indicator (falls back to controls)
+    playlist           playlist rows
+    playlist_selected  selected playlist row
+    playlist_playing   currently playing row (falls back to playlist)
+    queue_marker       queue position, e.g. [2] (falls back to row style)
+    folder             folder separator rows
+    search             search prompt
+    lyrics             lyrics lines (upcoming, or all lines when not synced)
+    lyrics_past        lyrics lines already passed
+    lyrics_current     current lyrics line
+    lyrics_status      lyrics status messages, e.g. no lyrics found
+
+Supported attributes: `normal`, `bold`, `dim`, `reverse`, `underline`,
+`standout` and `italic`, which may be combined, e.g. `bold,underline`.
+
+Supported colors: empty (terminal default), `black`, `red`, `green`,
+`yellow`, `blue`, `magenta`, `cyan`, `white`, and for terminals with more
+than 8 colors also `gray` and `bright_black` ... `bright_white`, as well as
+color numbers, e.g. `153` (xterm 256-color palette).
+
+Additional appearance settings:
+
+    border_style         square or rounded window corners
+    bar_fill_char        character for filled part of bars (empty for line)
+    bar_rail_char        character for unfilled part of bars (empty for none)
+    folder_sep_char      character for folder separator rows
+    spectrum_chars       characters for spectrum bar levels 1-7 (default
+                         ▁▂▃▄▅▆▇), e.g. .:-=+*# for plain ASCII, an 8th leading
+                         character sets level 0 (default blank)
+    spectrum_peak_level  bar level 1-7 from which spectrum_peak is used
+                         (default 5), or 8 to disable
+
+The character settings (`bar_fill_char`, `bar_rail_char`, `folder_sep_char`
+and `spectrum_chars`) only support single-width characters, i.e. not
+double-width characters such as CJK or emoji.
 
 Supported Platforms
 ===================

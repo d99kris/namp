@@ -53,7 +53,7 @@ set(SOURCES
 if(DEVBUILD)
     list(APPEND SOURCES dev/uikeyhandler.cpp dev/uiview.cpp)
 else()
-    list(APPEND SOURCES src/uikeyhandler.cpp src/uiview.cpp)
+    list(APPEND SOURCES src/uicolorconfig.cpp src/uicolorconfig.h src/uikeyhandler.cpp src/uiview.cpp)
 endif()
 
 if(NOT NO_GUI)

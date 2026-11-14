@@ -23,7 +23,9 @@ SOURCES              = src/audioplayer.cpp                     \
 !DEVBUILD {
 TARGET               = namp
 INCLUDEPATH         += $$PWD/src
-SOURCES             += src/uikeyhandler.cpp                    \
+HEADERS             += src/uicolorconfig.h
+SOURCES             += src/uicolorconfig.cpp                   \
+                       src/uikeyhandler.cpp                    \
                        src/uiview.cpp
 }
 

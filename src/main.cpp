@@ -480,6 +480,12 @@ static void ShowHelp()
     "Config Path macOS:\n"
     "   ~/Library/Preferences/se.nope.namp.plist\n"
     "\n"
+    "Color Config Path Linux:\n"
+    "   ~/.config/nope/namp/color.conf\n"
+    "\n"
+    "Color Config Path macOS:\n"
+    "   ~/Library/Preferences/nope/namp/color.conf\n"
+    "\n"
 #ifdef HAS_GUI
     "Cache Path Linux:\n"
     "   ~/.cache/nope/namp/\n"

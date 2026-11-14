@@ -17,6 +17,7 @@
 
 #include <locale.h>
 #include <signal.h>
+#include <string.h>
 #include <wchar.h>
 
 #include <ncurses.h>
@@ -26,6 +27,7 @@
 
 #include "scrobbler.h"
 #include "log.h"
+#include "uicolorconfig.h"
 #include "uiview.h"
 #include "util.h"
 
@@ -33,6 +35,87 @@ static bool s_ShowTrackPath = false;
 static int s_MinTerminalWidth = 40;
 static int s_MinTerminalHeight = 6;
 static int s_SearchWidthPad = 4;
+
+static void SetCChar(cchar_t* p_CChar, const wchar_t* p_Str, int p_Attr)
+{
+  setcchar(p_CChar, p_Str, (p_Attr & A_ATTRIBUTES & ~A_COLOR), PAIR_NUMBER(p_Attr), NULL);
+}
+
+static void DrawBorder(WINDOW* p_Window, int p_Attr)
+{
+  static const bool rounded = (UIColorConfig::GetString("border_style") == "rounded");
+  if (rounded)
+  {
+    cchar_t vline, hline, ulcorner, urcorner, llcorner, lrcorner;
+    SetCChar(&vline, L"│", p_Attr);
+    SetCChar(&hline, L"─", p_Attr);
+    SetCChar(&ulcorner, L"╭", p_Attr);
+    SetCChar(&urcorner, L"╮", p_Attr);
+    SetCChar(&llcorner, L"╰", p_Attr);
+    SetCChar(&lrcorner, L"╯", p_Attr);
+    wborder_set(p_Window, &vline, &vline, &hline, &hline, &ulcorner, &urcorner, &llcorner, &lrcorner);
+  }
+  else
+  {
+    wborder(p_Window, ACS_VLINE | p_Attr, ACS_VLINE | p_Attr, ACS_HLINE | p_Attr, ACS_HLINE | p_Attr,
+            ACS_ULCORNER | p_Attr, ACS_URCORNER | p_Attr, ACS_LLCORNER | p_Attr, ACS_LRCORNER | p_Attr);
+  }
+}
+
+static void DrawRepeated(WINDOW* p_Window, int p_Y, int p_X, int p_Count, const std::wstring& p_Char, int p_Attr)
+{
+  wattron(p_Window, p_Attr);
+  for (int i = 0; i < p_Count; ++i)
+  {
+    mvwaddnwstr(p_Window, p_Y, p_X + i, p_Char.c_str(), 1);
+  }
+  wattroff(p_Window, p_Attr);
+}
+
+// Draw horizontal bar (volume / progress) with optional rail for unfilled part
+static void DrawBar(WINDOW* p_Window, int p_Y, int p_X, int p_Width, int p_Filled, int p_FillAttr,
+                    int p_RailAttr)
+{
+  static const std::wstring fillChar = UIColorConfig::GetWString("bar_fill_char");
+  static const std::wstring railChar = UIColorConfig::GetWString("bar_rail_char");
+
+  if (p_Width <= 0) return;
+
+  mvwprintw(p_Window, p_Y, p_X, "%*c", p_Width, ' ');
+  if (!railChar.empty())
+  {
+    DrawRepeated(p_Window, p_Y, p_X, p_Width, railChar, p_RailAttr);
+  }
+
+  const int filled = qBound(0, p_Filled, p_Width);
+  if (filled == 0) return;
+
+  if (fillChar.empty())
+  {
+    mvwhline(p_Window, p_Y, p_X, ACS_HLINE | p_FillAttr, filled);
+  }
+  else
+  {
+    DrawRepeated(p_Window, p_Y, p_X, filled, fillChar, p_FillAttr);
+  }
+}
+
+// Draw a toggle such as "[X] Shuffle", returns its width
+static int DrawToggle(WINDOW* p_Window, int p_Y, int p_X, bool p_Checked, const char* p_Label)
+{
+  const int controlsAttr = UIColorConfig::GetAttr("controls");
+  const int toggleAttr = UIColorConfig::GetAttr("toggle", controlsAttr);
+  wattron(p_Window, controlsAttr);
+  mvwprintw(p_Window, p_Y, p_X, "[");
+  wattroff(p_Window, controlsAttr);
+  wattron(p_Window, toggleAttr);
+  mvwprintw(p_Window, p_Y, p_X + 1, "%c", p_Checked ? 'X' : ' ');
+  wattroff(p_Window, toggleAttr);
+  wattron(p_Window, controlsAttr);
+  mvwprintw(p_Window, p_Y, p_X + 2, "] %s", p_Label);
+  wattroff(p_Window, controlsAttr);
+  return 4 + static_cast<int>(strlen(p_Label));
+}
 
 static std::vector<std::wstring> WrapWString(const std::wstring& p_Str, int p_Width)
 {
@@ -114,6 +197,7 @@ UIView::UIView(QObject *p_Parent, Scrobbler* p_Scrobbler)
   timeout(0);
   keypad(stdscr, TRUE);
   signal(SIGINT, SIG_IGN);
+  UIColorConfig::Init();
 
   QTimer::singleShot(0, this, &UIView::Timer);
   m_Timer = new QTimer();
@@ -488,8 +572,9 @@ void UIView::DrawPlayer()
   if (m_PlayerWindow != NULL)
   {
     // Border and title
-    wborder(m_PlayerWindow, 0, 0, 0, 0, 0, 0, 0, 0);
-    const int titleAttributes = (m_UIState == UISTATE_PLAYER) ? A_BOLD : A_NORMAL;
+    const bool playerFocus = (m_UIState == UISTATE_PLAYER);
+    DrawBorder(m_PlayerWindow, UIColorConfig::GetAttr(playerFocus ? "border_focus" : "border"));
+    const int titleAttributes = UIColorConfig::GetAttr(playerFocus ? "title_focus" : "title");
     wattron(m_PlayerWindow, titleAttributes);
     const int titlePos = (m_PlayerWindowWidth - 6) / 2;
     mvwprintw(m_PlayerWindow, 0, titlePos, " namp ");
@@ -498,7 +583,10 @@ void UIView::DrawPlayer()
     // Track position
     if (m_ViewPosition)
     {
+      const int positionAttr = UIColorConfig::GetAttr("position");
+      wattron(m_PlayerWindow, positionAttr);
       mvwprintw(m_PlayerWindow, 1, 3, " %02d:%02d", (m_TrackPositionSec / 60), (m_TrackPositionSec % 60));
+      wattroff(m_PlayerWindow, positionAttr);
     }
     else
     {
@@ -509,7 +597,10 @@ void UIView::DrawPlayer()
     mvwprintw(m_PlayerWindow, 1, 11, "%.*s", -m_TitleWidth, "");
     std::string fullName = GetPlayerTrackName(m_TitleWidth).toStdString();
     std::wstring trackName = Util::TrimPadWString(Util::ToWString(fullName), m_TitleWidth);
+    const int trackAttr = UIColorConfig::GetAttr("track");
+    wattron(m_PlayerWindow, trackAttr);
     mvwaddnwstr(m_PlayerWindow, 1, 11, trackName.c_str(), trackName.size());
+    wattroff(m_PlayerWindow, trackAttr);
 
     // Spectrum analyzer
     if (m_ViewAnalyzer)
@@ -522,19 +613,29 @@ void UIView::DrawPlayer()
     }
 
     // Volume
-    mvwprintw(m_PlayerWindow, 2, 11, "-%*c+", m_VolumeWidth, ' ');
-    mvwhline(m_PlayerWindow, 2, 12, 0, (m_VolumeWidth * m_VolumePercentage) / 100);
+    const int controlsAttr = UIColorConfig::GetAttr("controls");
+    wattron(m_PlayerWindow, controlsAttr);
+    mvwprintw(m_PlayerWindow, 2, 11, "-");
+    mvwprintw(m_PlayerWindow, 2, 12 + m_VolumeWidth, "+");
+    wattroff(m_PlayerWindow, controlsAttr);
+    DrawBar(m_PlayerWindow, 2, 12, m_VolumeWidth, (m_VolumeWidth * m_VolumePercentage) / 100,
+            UIColorConfig::GetAttr("volume"), UIColorConfig::GetAttr("volume_rail"));
 
     // Progress
-    mvwprintw(m_PlayerWindow, 3, 2, "|%*c|", m_PositionWidth, ' ');
-    if(m_TrackDurationSec != 0)
-    {
-      mvwhline(m_PlayerWindow, 3, 3, 0, (m_PositionWidth * m_TrackPositionSec) / m_TrackDurationSec);
-    }
+    wattron(m_PlayerWindow, controlsAttr);
+    mvwprintw(m_PlayerWindow, 3, 2, "|");
+    mvwprintw(m_PlayerWindow, 3, 3 + m_PositionWidth, "|");
+    wattroff(m_PlayerWindow, controlsAttr);
+    const int progress = (m_TrackDurationSec != 0) ? ((m_PositionWidth * m_TrackPositionSec) / m_TrackDurationSec) : 0;
+    DrawBar(m_PlayerWindow, 3, 3, m_PositionWidth, progress,
+            UIColorConfig::GetAttr("progress"), UIColorConfig::GetAttr("progress_rail"));
 
     // Playback controls
     int xpos = 2;
-    mvwprintw(m_PlayerWindow, 4, xpos, "|< |> || [] >|  ");
+    wattron(m_PlayerWindow, controlsAttr);
+    mvwprintw(m_PlayerWindow, 4, xpos, "|< |> || [] >|");
+    wattroff(m_PlayerWindow, controlsAttr);
+    mvwprintw(m_PlayerWindow, 4, xpos + 14, "  ");
     xpos += 16;
 
     // Scrobble indicator (only when scrobbler is configured)
@@ -549,14 +650,17 @@ void UIView::DrawPlayer()
         case SCROBBLESTATE_FAILED: state = '!'; break;
         default: break;
       }
-      mvwprintw(m_PlayerWindow, 4, xpos, "%c  ", state);
+      const int scrobbleAttr = UIColorConfig::GetAttr("scrobble", controlsAttr);
+      wattron(m_PlayerWindow, scrobbleAttr);
+      mvwprintw(m_PlayerWindow, 4, xpos, "%c", state);
+      wattroff(m_PlayerWindow, scrobbleAttr);
+      mvwprintw(m_PlayerWindow, 4, xpos + 1, "  ");
       xpos += 3;
     }
 
     // Shuffle toggle
     m_ShuffleX = xpos;
-    mvwprintw(m_PlayerWindow, 4, xpos, "[%c] Shuffle", m_Shuffle ? 'X' : ' ');
-    xpos += 11;
+    xpos += DrawToggle(m_PlayerWindow, 4, xpos, m_Shuffle, "Shuffle");
 
     // Lyrics toggle, or karaoke toggle for CDG tracks (when available and
     // fits in window, with trailing space margin)
@@ -564,13 +668,15 @@ void UIView::DrawPlayer()
     if (m_LyricsAvailable && (xpos + 15 <= m_PlayerWindowWidth))
     {
       m_LyricsX = xpos + 2;
+      mvwprintw(m_PlayerWindow, 4, xpos, "  ");
       if (m_CdgTrack)
       {
-        mvwprintw(m_PlayerWindow, 4, xpos, "  [%c] Karaoke", m_CdgEnabled ? 'X' : ' ');
+        DrawToggle(m_PlayerWindow, 4, xpos + 2, m_CdgEnabled, "Karaoke");
       }
       else
       {
-        mvwprintw(m_PlayerWindow, 4, xpos, "  [%c] Lyrics ", m_LyricsEnabled ? 'X' : ' ');
+        DrawToggle(m_PlayerWindow, 4, xpos + 2, m_LyricsEnabled, "Lyrics");
+        mvwprintw(m_PlayerWindow, 4, xpos + 12, " ");
       }
     }
 
@@ -737,12 +843,19 @@ void UIView::DrawPlaylist()
   if (m_PlaylistWindow != NULL)
   {
     // Border
-    wborder(m_PlaylistWindow, 0, 0, 0, 0, 0, 0, 0, 0);
+    const bool playlistFocus = (m_UIState & (UISTATE_PLAYLIST | UISTATE_SEARCH));
+    DrawBorder(m_PlaylistWindow, UIColorConfig::GetAttr(playlistFocus ? "border_focus" : "border"));
+
+    const int playlistAttr = UIColorConfig::GetAttr("playlist");
+    const int selectedAttr = UIColorConfig::GetAttr("playlist_selected");
+    const int playingAttr = UIColorConfig::GetAttr("playlist_playing", playlistAttr);
+    const bool queueMarkerSet = UIColorConfig::IsSet("queue_marker");
+    const int queueMarkerAttr = UIColorConfig::GetAttr("queue_marker");
 
     if (m_UIState & (UISTATE_PLAYER | UISTATE_PLAYLIST))
     {
       // Title
-      const int titleAttributes = (m_UIState & (UISTATE_PLAYLIST | UISTATE_SEARCH)) ? A_BOLD : A_NORMAL;
+      const int titleAttributes = UIColorConfig::GetAttr(playlistFocus ? "title_focus" : "title");
       wattron(m_PlaylistWindow, titleAttributes);
       const int titlePos = (m_PlaylistWindowWidth - 10) / 2;
       mvwprintw(m_PlaylistWindow, 0, titlePos, " playlist ");
@@ -757,11 +870,13 @@ void UIView::DrawPlaylist()
       {
         if (NeedsSeparatorBefore(trackIndex))
         {
+          static const std::wstring sepCharStr = UIColorConfig::GetWString("folder_sep_char");
+          static const QString sepChar = QString::fromStdWString(sepCharStr.empty() ? L"=" : sepCharStr.substr(0, 1));
           QString folderName = GetFolderDisplayName(trackIndex);
           QString sepLine;
           if (folderName.isEmpty())
           {
-            sepLine = QString(viewLength, '=');
+            sepLine = sepChar.repeated(viewLength);
           }
           else
           {
@@ -769,14 +884,15 @@ void UIView::DrawPlaylist()
             int padTotal = viewLength - nameLen - 2;
             int padLeft = qMax(1, padTotal / 2);
             int padRight = qMax(1, padTotal - padLeft);
-            sepLine = QString(padLeft, '=') + " " + folderName + " " + QString(padRight, '=');
+            sepLine = sepChar.repeated(padLeft) + " " + folderName + " " + sepChar.repeated(padRight);
           }
           std::wstring sepWStr = Util::TrimPadWString(Util::ToWString(sepLine.toStdString()), viewLength);
-          wattron(m_PlaylistWindow, A_DIM);
+          const int folderAttr = UIColorConfig::GetAttr("folder");
+          wattron(m_PlaylistWindow, folderAttr);
           std::wstring spaces(viewLength, L' ');
           mvwaddnwstr(m_PlaylistWindow, row + 1, 2, spaces.c_str(), spaces.size());
           mvwaddnwstr(m_PlaylistWindow, row + 1, 2, sepWStr.c_str(), sepWStr.size());
-          wattroff(m_PlaylistWindow, A_DIM);
+          wattroff(m_PlaylistWindow, folderAttr);
           ++row;
           if (row >= viewMax) break;
         }
@@ -788,11 +904,20 @@ void UIView::DrawPlaylist()
         std::wstring trackName = Util::TrimPadWString(Util::ToWString(fullName), nameWidth);
         std::wstring line = trackName + marker;
         line = Util::TrimPadWString(line, viewLength);
-        wattron(m_PlaylistWindow, (trackIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
+        const bool selected = (trackIndex == m_PlaylistSelected);
+        const int rowAttr = selected ? selectedAttr : ((trackIndex == m_PlaylistPosition) ? playingAttr : playlistAttr);
+        wattron(m_PlaylistWindow, rowAttr);
         std::wstring spaces(viewLength, L' ');
         mvwaddnwstr(m_PlaylistWindow, row + 1, 2, spaces.c_str(), spaces.size());
         mvwaddnwstr(m_PlaylistWindow, row + 1, 2, line.c_str(), line.size());
-        wattroff(m_PlaylistWindow, (trackIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
+        wattroff(m_PlaylistWindow, rowAttr);
+        if (!selected && queueMarkerSet && !marker.empty() && (nameWidth < viewLength))
+        {
+          std::wstring markerStr = Util::TrimPadWString(marker, viewLength - nameWidth);
+          wattron(m_PlaylistWindow, queueMarkerAttr);
+          mvwaddnwstr(m_PlaylistWindow, row + 1, 2 + nameWidth, markerStr.c_str(), markerStr.size());
+          wattroff(m_PlaylistWindow, queueMarkerAttr);
+        }
         ++row;
         ++trackIndex;
       }
@@ -831,11 +956,21 @@ void UIView::DrawPlaylist()
         std::wstring trackName = Util::TrimPadWString(Util::ToWString(fullName), nameWidth);
         std::wstring line = trackName + marker;
         line = Util::TrimPadWString(line, viewLength);
-        wattron(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
+        const bool selected = (playlistIndex == m_PlaylistSelected);
+        const bool playing = (m_Resultlist.at(playlistIndex).index == m_PlaylistPosition);
+        const int rowAttr = selected ? selectedAttr : (playing ? playingAttr : playlistAttr);
+        wattron(m_PlaylistWindow, rowAttr);
         std::wstring spaces(viewLength, L' ');
         mvwaddnwstr(m_PlaylistWindow, i + 1, 2, spaces.c_str(), spaces.size());
         mvwaddnwstr(m_PlaylistWindow, i + 1, 2, line.c_str(), line.size());
-        wattroff(m_PlaylistWindow, (playlistIndex == m_PlaylistSelected) ? A_REVERSE : A_NORMAL);
+        wattroff(m_PlaylistWindow, rowAttr);
+        if (!selected && queueMarkerSet && !marker.empty() && (nameWidth < viewLength))
+        {
+          std::wstring markerStr = Util::TrimPadWString(marker, viewLength - nameWidth);
+          wattron(m_PlaylistWindow, queueMarkerAttr);
+          mvwaddnwstr(m_PlaylistWindow, i + 1, 2 + nameWidth, markerStr.c_str(), markerStr.size());
+          wattroff(m_PlaylistWindow, queueMarkerAttr);
+        }
       }
 
       // Clear remaining track list lines
@@ -847,14 +982,15 @@ void UIView::DrawPlaylist()
       }
 
       // Title
-      wattron(m_PlaylistWindow, A_BOLD);
+      const int searchAttr = UIColorConfig::GetAttr("search");
+      wattron(m_PlaylistWindow, searchAttr);
       const int searchStrLength = m_PlaylistWindowWidth - s_SearchWidthPad;
       const int viewLength = m_PlaylistWindowWidth - s_SearchWidthPad;
       std::wstring trackName = Util::TrimPadWString(Util::ToWString(" search: " + m_SearchString.toStdString()), viewLength);
       std::wstring spaces(viewLength, L' ');
       mvwaddnwstr(m_PlaylistWindow, 0, 2, spaces.c_str(), spaces.size());
       mvwaddnwstr(m_PlaylistWindow, 0, 2, trackName.c_str(), trackName.size());
-      wattroff(m_PlaylistWindow, A_BOLD);
+      wattroff(m_PlaylistWindow, searchAttr);
       wmove(m_PlaylistWindow, 0, searchStrLength - s_SearchWidthPad - 1 + m_SearchStringPos);
     }
 
@@ -1348,8 +1484,9 @@ bool UIView::IsLyricsViewActive() const
 void UIView::DrawLyrics()
 {
   // Border and title
-  wborder(m_PlaylistWindow, 0, 0, 0, 0, 0, 0, 0, 0);
-  const int titleAttributes = (m_UIState & UISTATE_PLAYLIST) ? A_BOLD : A_NORMAL;
+  const bool lyricsFocus = (m_UIState & UISTATE_PLAYLIST);
+  DrawBorder(m_PlaylistWindow, UIColorConfig::GetAttr(lyricsFocus ? "border_focus" : "border"));
+  const int titleAttributes = UIColorConfig::GetAttr(lyricsFocus ? "title_focus" : "title");
   wattron(m_PlaylistWindow, titleAttributes);
   const int titlePos = (m_PlaylistWindowWidth - 8) / 2;
   mvwprintw(m_PlaylistWindow, 0, titlePos, " lyrics ");
@@ -1398,6 +1535,10 @@ void UIView::DrawLyrics()
 
   // Draw rows centered horizontally, dim past lines and bold current line
   const bool highlight = m_Lyrics.synced && !m_LyricsSynthetic && (currentLine >= 0);
+  const int lyricsAttr = UIColorConfig::GetAttr("lyrics");
+  const int lyricsPastAttr = UIColorConfig::GetAttr("lyrics_past");
+  const int lyricsCurrentAttr = UIColorConfig::GetAttr("lyrics_current");
+  const int lyricsStatusAttr = UIColorConfig::GetAttr("lyrics_status");
   for (int i = 0; i < viewMax; ++i)
   {
     std::wstring spaces(viewLength, L' ');
@@ -1407,14 +1548,14 @@ void UIView::DrawLyrics()
     if ((rowIndex < 0) || (rowIndex >= (int)rows.size())) continue;
 
     const int line = rowLines.at(rowIndex);
-    int attributes = A_NORMAL;
+    int attributes = lyricsAttr;
     if (line < 0)
     {
-      attributes = A_DIM;
+      attributes = lyricsStatusAttr;
     }
     else if (highlight)
     {
-      attributes = (line == currentLine) ? A_BOLD : ((line < currentLine) ? A_DIM : A_NORMAL);
+      attributes = (line == currentLine) ? lyricsCurrentAttr : ((line < currentLine) ? lyricsPastAttr : lyricsAttr);
     }
 
     const std::wstring& row = rows.at(rowIndex);
@@ -1467,12 +1608,36 @@ void UIView::ToggleAnalyzer()
 
 void UIView::DrawSpectrumBars()
 {
-  static const wchar_t bars[] = L" \u2581\u2582\u2583\u2584\u2585\u2586\u2587";
+  // Characters for levels 0-7, left-padded with space when fewer are given
+  // (i.e. 7 characters set levels 1-7 and keep level 0 blank)
+  static const std::wstring bars = []()
+  {
+    std::wstring chars = UIColorConfig::GetWString("spectrum_chars").substr(0, 8);
+    if (chars.empty()) chars = L"\u2581\u2582\u2583\u2584\u2585\u2586\u2587";
+    return std::wstring(8 - chars.size(), L' ') + chars;
+  }();
+
+  // Level from which bars use spectrum_peak, 8 to disable
+  static const int peakLevel = []()
+  {
+    bool ok = false;
+    const int level = QString::fromStdString(UIColorConfig::GetString("spectrum_peak_level")).toInt(&ok);
+    if (ok && (level >= 1) && (level <= 8)) return level;
+
+    Log::Warning("invalid spectrum_peak_level, using 5");
+    return 5;
+  }();
+
+  const int barAttr = UIColorConfig::GetAttr("spectrum");
+  const int peakAttr = UIColorConfig::GetAttr("spectrum_peak", barAttr);
   for (int i = 0; i < 8 && i < m_SpectrumBands.size(); ++i)
   {
     int level = qBound(0, static_cast<int>(m_SpectrumBands[i] * 7.0f), 7);
     wchar_t ch = bars[level];
+    const int attr = (level >= peakLevel) ? peakAttr : barAttr;
+    wattron(m_PlayerWindow, attr);
     mvwaddnwstr(m_PlayerWindow, 2, 2 + i, &ch, 1);
+    wattroff(m_PlayerWindow, attr);
   }
 }
 
