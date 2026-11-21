@@ -36,6 +36,8 @@ Command-line Options:
     --clear-cache     clear lyrics cache and exit
     -h, --help        display this help and exit
     -s, --setup       setup last.fm scrobbling account
+    -t, --theme [TH]  install color theme, or select from list of
+                      available themes if not specified
     -v, --version     output version information and exit
     PATH              file or directory to add to playlist
 
@@ -43,6 +45,7 @@ Command-line Examples:
 
     namp ~/Music      play all files in ~/Music
     namp hello.mp3    play hello.mp3
+    namp -t default   install the default color theme
 
 Interactive Commands:
 
@@ -93,16 +96,27 @@ The colors of namp can be customized in `color.conf`, located at:
     ~/Library/Preferences/nope/namp/color.conf    (macOS)
 
 The file is created with default values (the classic namp look using terminal
-default colors) the first time namp is started. Theme examples are available
-in the source package under the themes directory, and can be used by copying
-to `color.conf` while namp is not running:
+default colors) the first time namp is started.
+
+namp comes with a set of bundled color themes, which can be installed using
+`namp --theme`. Without a theme name it presents a list of available themes
+to select from:
+
+    namp --theme
+
+A theme may also be specified directly, for example:
+
+    namp --theme pastel-blue
+
+Available themes:
 
     default
     pastel-blue
 
-Example installing `pastel-blue` theme on macOS:
-
-    cp themes/pastel-blue.conf ~/Library/Preferences/nope/namp/color.conf
+The theme is written to `color.conf`, overwriting any existing file. A running
+namp instance needs to be restarted for the theme to take effect. The theme
+files are available in the source package under the `themes` directory and
+also listed in `themes/index.txt`.
 
 Each UI element has three settings, `<element>_attr`, `<element>_color_bg`
 and `<element>_color_fg`. Elements:

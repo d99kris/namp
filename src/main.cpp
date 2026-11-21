@@ -38,6 +38,9 @@
 #endif
 #endif
 #include "log.h"
+#ifdef HAS_BUNDLED_THEMES
+#include "theme.h"
+#endif
 #include "uikeyhandler.h"
 #include "uiview.h"
 #include "version.h"
@@ -83,6 +86,10 @@ int main(int argc, char *argv[])
   arguments.removeAt(0);
   bool setup = false;
   bool clearCache = false;
+#ifdef HAS_BUNDLED_THEMES
+  bool themeInstall = false;
+  std::string theme;
+#endif
   if (arguments.size() == 0)
   {
     ShowHelp();
@@ -108,15 +115,35 @@ int main(int argc, char *argv[])
     clearCache = true;
   }
 #endif
+#ifdef HAS_BUNDLED_THEMES
+  else if ((arguments.size() > 0) && ((arguments.at(0) == "-t") || (arguments.at(0) == "--theme")))
+  {
+    // optional theme name, prompt for selection if not specified
+    themeInstall = true;
+    if ((arguments.size() > 1) && !arguments.at(1).startsWith("-"))
+    {
+      theme = arguments.at(1).toStdString();
+    }
+  }
+#endif
+
+  // Init application identity (determines config paths)
+  QCoreApplication::setApplicationName("namp");
+  QCoreApplication::setOrganizationName("nope");
+  QCoreApplication::setOrganizationDomain("nope.se");
+
+#ifdef HAS_BUNDLED_THEMES
+  if (themeInstall)
+  {
+    return Theme::Install(theme) ? 0 : 1;
+  }
+#endif
 
   // Init environment
   InitStdErrRedirect("/dev/null");
   srand(time(0));
 
   // Init settings
-  QCoreApplication::setApplicationName("namp");
-  QCoreApplication::setOrganizationName("nope");
-  QCoreApplication::setOrganizationDomain("nope.se");
   QSettings settings;
 
 #ifdef HAS_GUI
@@ -424,12 +451,21 @@ static void ShowHelp()
 #endif
     "   -h, --help        display this help and exit\n"
     "   -s, --setup       setup last.fm scrobbling account\n"
+#ifdef HAS_BUNDLED_THEMES
+    "   -t, --theme [THEME]\n"
+    "                     install color theme, or select from list of\n"
+    "                     available themes if not specified\n"
+#endif
     "   -v, --version     output version information and exit\n"
     "   PATH              file or directory to add to playlist\n"
     "\n"
     "Command-line Examples:\n"
     "   namp ~/Music      play all files in ~/Music\n"
     "   namp hello.mp3    play hello.mp3\n"
+#ifdef HAS_BUNDLED_THEMES
+    "   namp -t pastel-blue\n"
+    "                     install the pastel-blue color theme\n"
+#endif
     "\n"
     "Interactive Commands:\n"
     "   z                 previous track\n"

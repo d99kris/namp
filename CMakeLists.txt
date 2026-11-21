@@ -54,6 +54,30 @@ if(DEVBUILD)
     list(APPEND SOURCES dev/uikeyhandler.cpp dev/uiview.cpp)
 else()
     list(APPEND SOURCES src/uicolorconfig.cpp src/uicolorconfig.h src/uikeyhandler.cpp src/uiview.cpp)
+
+    # Embedded color themes - listed in themes/index.txt, which is a configure
+    # dependency so that adding or removing a theme updates the DEPENDS list.
+    include(utils/embedutil.cmake)
+    set(GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+    set(THEMES_HEADER "${GENERATED_DIR}/themes.h")
+    set(THEMES_INDEX "${CMAKE_CURRENT_SOURCE_DIR}/themes/index.txt")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${THEMES_INDEX}")
+    embed_theme_names("${THEMES_INDEX}" THEME_NAMES)
+    set(THEME_FILES "")
+    foreach(THEME_NAME ${THEME_NAMES})
+        list(APPEND THEME_FILES "themes/${THEME_NAME}.conf")
+    endforeach()
+    add_custom_command(
+        OUTPUT "${THEMES_HEADER}"
+        COMMAND "${CMAKE_COMMAND}"
+                -DTHEMES_DIR=${CMAKE_CURRENT_SOURCE_DIR}/themes
+                -DOUT_FILE=${THEMES_HEADER}
+                -P ${CMAKE_CURRENT_SOURCE_DIR}/utils/embedthemes.cmake
+        DEPENDS themes/index.txt ${THEME_FILES} utils/embedthemes.cmake utils/embedutil.cmake
+        COMMENT "Embedding themes"
+        VERBATIM
+    )
+    list(APPEND SOURCES ${THEMES_HEADER} src/theme.cpp src/theme.h)
 endif()
 
 if(NOT NO_GUI)
@@ -87,6 +111,11 @@ set_target_properties(${TARGET_NAME} PROPERTIES
 target_include_directories(${TARGET_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+
+if(NOT DEVBUILD)
+    target_compile_definitions(${TARGET_NAME} PRIVATE HAS_BUNDLED_THEMES)
+    target_include_directories(${TARGET_NAME} PRIVATE ${GENERATED_DIR})
+endif()
 
 if(NOT NO_GUI)
     target_compile_definitions(${TARGET_NAME} PRIVATE HAS_GUI)

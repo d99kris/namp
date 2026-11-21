@@ -1,0 +1,8 @@
+# index.txt
+#
+# Themes embedded in the namp executable, listed in the order presented by
+# "namp --theme". Each entry <name> refers to themes/<name>.conf. The first
+# entry is the default selection.
+
+default
+pastel-blue
