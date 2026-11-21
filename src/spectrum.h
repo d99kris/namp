@@ -36,8 +36,13 @@ signals:
 private slots:
   void OnTimer();
   void OnDecoderFinished();
+  void OnDecoderSettled();
+  void ApplyPendingOp();
+  void OnDecoderLoadingWatchdog();
 
 private:
+  void StartDecoder(const QString& p_Track);
+  void StopDecoder();
   void ProcessDecoderBuffer();
   static void FFT(std::vector<std::complex<float>>& p_Data);
 
@@ -48,6 +53,18 @@ private:
   bool m_Decaying = false;
   std::function<qint64()> m_PositionGetter;
   QAudioDecoder m_Decoder;
+
+  // The macOS AVFoundation decoder backend loads tracks asynchronously and
+  // hands a non-retained AVAssetTrack* to a queued call. Calling stop() or
+  // setSource() before that call runs releases the asset (and the track),
+  // causing a use-after-free crash. While loading, decoder operations are
+  // therefore deferred until the decoder has settled.
+  enum class PendingOp { None, Start, Stop };
+  bool m_DecoderLoading = false;
+  bool m_ApplyPendingQueued = false;
+  PendingOp m_PendingOp = PendingOp::None;
+  QString m_PendingTrack;
+  QTimer m_DecoderLoadingWatchdog;
   QTimer m_Timer;
   QVector<QPair<qint64, QVector<float>>> m_SpectrumData;
   QVector<float> m_CurrentSpectrum = QVector<float>(8, 0.0f);

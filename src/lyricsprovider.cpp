@@ -37,6 +37,12 @@
 #include "lyricsprovider.h"
 #include "version.h"
 
+// Track changes within s_TrackBurstMs of the previous one (e.g. holding the
+// next / previous key) are considered rapid, and their lookup is deferred
+// until no track change occurred for s_TrackDebounceMs. The burst window
+// should exceed the keyboard initial key repeat delay (macOS default 375 ms).
+static const int s_TrackBurstMs = 500;
+static const int s_TrackDebounceMs = 150;
 static const int s_DebounceMs = 1000;
 static const int s_RetryDelaysSec[] = { 3, 5, 8 };
 static const int s_MaxRetries = sizeof(s_RetryDelaysSec) / sizeof(s_RetryDelaysSec[0]);
@@ -61,6 +67,11 @@ LyricsProvider::LyricsProvider(QObject* p_Parent)
   : QObject(p_Parent)
   , m_NetworkManager(new QNetworkAccessManager(this))
 {
+  m_TrackDebounceTimer.setSingleShot(true);
+  connect(&m_TrackDebounceTimer, &QTimer::timeout, this, [this]()
+  {
+    StartLookup(m_PendingTrackPath, false /* p_Refetch */);
+  });
   m_DebounceTimer.setSingleShot(true);
   connect(&m_DebounceTimer, &QTimer::timeout, this, &LyricsProvider::DoLookup);
   m_RetryTimer.setSingleShot(true);
@@ -70,7 +81,50 @@ LyricsProvider::LyricsProvider(QObject* p_Parent)
 void LyricsProvider::TrackChanged(const QString& p_TrackPath)
 {
   Log::Info("Lyrics track changed: %s (enabled=%d)", p_TrackPath.toStdString().c_str(), m_Enabled);
-  StartLookup(p_TrackPath, false /* p_Refetch */);
+
+  const bool isRapid = m_LastTrackChange.isValid() && (m_LastTrackChange.elapsed() < s_TrackBurstMs);
+  m_LastTrackChange.start();
+
+  // Single track change (e.g. one key press, or end of track) is looked up
+  // immediately.
+  if (!isRapid)
+  {
+    StartLookup(p_TrackPath, false /* p_Refetch */);
+    return;
+  }
+
+  // Invalidate previous track right away, so its pending / in-flight lookup
+  // cannot deliver lyrics for the wrong track.
+  CancelLookup();
+  m_PendingTrackPath = p_TrackPath;
+
+  if (!m_Enabled)
+  {
+    m_TrackDebounceTimer.stop();
+    return;
+  }
+
+  // Defer lookup until the user settles on a track, to avoid UI flicker
+  // when quickly skipping through tracks. Clear stale lyrics once per burst.
+  if (!m_TrackDebounceTimer.isActive())
+  {
+    emit LyricsLoading();
+  }
+
+  m_TrackDebounceTimer.start(s_TrackDebounceMs);
+}
+
+void LyricsProvider::CancelLookup()
+{
+  m_CachedTrackPath.clear();
+  m_CachedLyrics = LyricsData();
+
+  m_DebounceTimer.stop();
+  m_RetryTimer.stop();
+  m_RetryCount = 0;
+
+  // Reply lambdas gate on m_CurrentTrackPath matching
+  m_CurrentTrackPath.clear();
 }
 
 void LyricsProvider::RefetchLyrics()
@@ -84,29 +138,17 @@ void LyricsProvider::RefetchLyrics()
 void LyricsProvider::StartLookup(const QString& p_TrackPath, bool p_Refetch)
 {
   m_PendingTrackPath = p_TrackPath;
+  m_TrackDebounceTimer.stop();
 
   // Any track change (or refresh of the current track after a tag edit)
-  // invalidates cached lyrics.
-  m_CachedTrackPath.clear();
-  m_CachedLyrics = LyricsData();
-
-  // Cancel any pending retry of the previous lookup
-  m_RetryTimer.stop();
-  m_RetryCount = 0;
+  // invalidates cached lyrics, and cancels pending lookups / retries.
+  CancelLookup();
 
   // Skip lookups entirely when the lyrics window is disabled — no point
   // hitting LRCLIB (or parsing tags) if nothing will display the result.
-  if (!m_Enabled)
-  {
-    m_CurrentTrackPath.clear();
-    m_DebounceTimer.stop();
-    return;
-  }
+  if (!m_Enabled) return;
 
   m_CurrentTrackPath = p_TrackPath;
-
-  // Cancel any pending online lookup of the previous track
-  m_DebounceTimer.stop();
 
   Log::Info("Lyrics lookup starting for: %s", p_TrackPath.toStdString().c_str());
 
@@ -165,6 +207,7 @@ void LyricsProvider::SetEnabled(bool p_Enabled)
   {
     // Cancel any pending debounce and invalidate in-flight replies
     // (the reply lambdas gate on m_CurrentTrackPath matching).
+    m_TrackDebounceTimer.stop();
     m_DebounceTimer.stop();
     m_RetryTimer.stop();
     m_CurrentTrackPath.clear();
@@ -186,7 +229,7 @@ void LyricsProvider::SetEnabled(bool p_Enabled)
 
   // Re-enabled: kick off a lookup for whatever track is currently loaded.
   if (!m_PendingTrackPath.isEmpty())
-    TrackChanged(m_PendingTrackPath);
+    StartLookup(m_PendingTrackPath, false /* p_Refetch */);
 }
 
 void LyricsProvider::DoLookup()

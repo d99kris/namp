@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <QElapsedTimer>
 #include <QJsonObject>
 #include <QNetworkAccessManager>
 #include <QObject>
@@ -37,6 +38,7 @@ signals:
   void LyricsServiceBusy();
 
 private:
+  void CancelLookup();
   void StartLookup(const QString& p_TrackPath, bool p_Refetch);
   void DoLookup();
   void EmitLyricsReady(const LyricsData& p_Lyrics);
@@ -64,6 +66,8 @@ private:
   QString m_CachedTrackPath;
   LyricsData m_CachedLyrics;
   bool m_Enabled = false;
+  QElapsedTimer m_LastTrackChange;
+  QTimer m_TrackDebounceTimer;
   QTimer m_DebounceTimer;
   QTimer m_RetryTimer;
   int m_RetryCount = 0;
