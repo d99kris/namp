@@ -9,7 +9,10 @@ namp is a terminal-based MP3 player for Linux and macOS, implemented in C++ / Qt
 For systems which do not have Qt available, a lite version of namp
 [namp-lite](https://github.com/d99kris/namp-lite) (Linux only) is available.
 
-![screenshot](/res/namp-screenshot.png)
+<p align="center">
+  <img alt="screenshot namp" src="res/namp-screenshot.png" width="738"><br>
+  <sub>namp with the pastel-blue theme, see <a href="https://github.com/d99kris/namp/wiki/Themes">Themes</a> for more.</sub>
+</p>
 
 Features
 --------
@@ -114,9 +117,11 @@ Available themes:
     pastel-blue
 
 The theme is written to `color.conf`, overwriting any existing file. A running
-namp instance needs to be restarted for the theme to take effect. The theme
-files are available in the source package under the `themes` directory and
-also listed in `themes/index.txt`.
+namp instance needs to be restarted for the theme to take effect.
+
+See the [Themes wiki-page](https://github.com/d99kris/namp/wiki/Themes) for
+example screenshots. The theme files are available in the source package
+under the `themes` directory and also listed in `themes/index.txt`.
 
 Each UI element has three settings, `<element>_attr`, `<element>_color_bg`
 and `<element>_color_fg`. Elements:
