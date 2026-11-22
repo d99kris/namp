@@ -5,9 +5,9 @@ namp
 |-----------|---------|
 | [![Linux](https://github.com/d99kris/namp/workflows/Linux/badge.svg)](https://github.com/d99kris/namp/actions?query=workflow%3ALinux) | [![macOS](https://github.com/d99kris/namp/workflows/macOS/badge.svg)](https://github.com/d99kris/namp/actions?query=workflow%3AmacOS) |
 
-namp is a terminal-based MP3 player for Linux and macOS, implemented in C++ / Qt.
-For systems which do not have Qt available, a lite version of namp
-[namp-lite](https://github.com/d99kris/namp-lite) (Linux only) is available.
+namp is a terminal-based MP3 player for Linux and macOS, implemented in
+C++ / Qt. For systems that do not have Qt available, a lite version of namp,
+[namp-lite](https://github.com/d99kris/namp-lite) (Linux only), is available.
 
 <p align="center">
   <img alt="screenshot namp" src="res/namp-screenshot.png" width="738"><br>
@@ -22,7 +22,7 @@ Features
 - Lyrics from .lrc files, embedded tags or LRCLIB
 - Real-time spectrum analyzer visualization
 - Mouse control and Winamp-style key bindings
-- Edit track tags using external tool idntag
+- Edit track tags using the external tool idntag
 - Last.fm scrobbling with status indicator
 - Shuffle and sequential playback modes
 - Customizable color themes
@@ -119,7 +119,7 @@ Available themes:
 The theme is written to `color.conf`, overwriting any existing file. A running
 namp instance needs to be restarted for the theme to take effect.
 
-See the [Themes wiki-page](https://github.com/d99kris/namp/wiki/Themes) for
+See the [Themes wiki page](https://github.com/d99kris/namp/wiki/Themes) for
 example screenshots. The theme files are available in the source package
 under the `themes` directory and also listed in `themes/index.txt`.
 
@@ -169,7 +169,7 @@ Additional appearance settings:
     bar_rail_char        character for unfilled part of bars (empty for none)
     folder_sep_char      character for folder separator rows
     spectrum_chars       characters for spectrum bar levels 1-7 (default
-                         ▁▂▃▄▅▆▇), e.g. .:-=+*# for plain ASCII, an 8th leading
+                         ▁▂▃▄▅▆▇), e.g. .:-=+*# for plain ASCII; an 8th leading
                          character sets level 0 (default blank)
     spectrum_peak_level  bar level 1-7 from which spectrum_peak is used
                          (default 5), or 8 to disable
@@ -181,10 +181,10 @@ double-width characters such as CJK or emoji.
 Supported Platforms
 ===================
 namp is primarily developed and tested on macOS, but basic functionality should
-work on Linux as well. Current version has been tested on:
+work on Linux as well. The current version has been tested on:
 
-- macOS Sequoia 15.4
-- Ubuntu 24.04 LTS
+- macOS Sequoia 15.8
+- Ubuntu 26.04 LTS
 
 Linux
 =====
@@ -231,12 +231,12 @@ macOS
 
 External Tools
 ==============
-Using external tag editor requires [idntag](https://github.com/d99kris/idntag)
-to be installed on the system.
+Using the external tag editor requires
+[idntag](https://github.com/d99kris/idntag) to be installed on the system.
 
 License
 =======
-namp is distributed under GPLv2 license. See LICENSE file.
+namp is distributed under the GPLv2 license. See the LICENSE file.
 
 Keywords
 ========
